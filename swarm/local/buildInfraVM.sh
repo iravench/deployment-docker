@@ -2,7 +2,7 @@
 
 # create the infra vm if it doesn't already exist
 if ! docker-machine inspect infra &> /dev/null; then
-  docker-machine create --driver virtualbox --virtualbox-memory 3072 infra
+  docker-machine create --driver virtualbox --virtualbox-memory 2048 infra
   INFRA_ADDR=$(docker-machine ip infra)
   REGISTRY_ADDR="$INFRA_ADDR:5000"
   docker-machine ssh infra "echo $'EXTRA_ARGS=\"--insecure-registry '$REGISTRY_ADDR'\"' | sudo tee -a /var/lib/boot2docker/profile && sudo /etc/init.d/docker restart"
