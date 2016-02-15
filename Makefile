@@ -44,16 +44,17 @@ example_up: example_down
 	  $(REGISTRY_ADDR)/example_node_api
 	docker run -d -e constraint:for==app --name node_api_02 --net overlay \
 	  $(REGISTRY_ADDR)/example_node_api
-	docker run -d -e constraint:for==nginx --name nginx -p 80:80 --net overlay \
+	docker run -d -e constraint:for==nginx --name example_api -p 80:80 --net overlay \
+	  -e SERVICE_80_NAME=example-api \
 	  -e SERVICE_80_CHECK_HTTP=/api/v1/health \
-	  -e SERVICE_80_CHECK_INTERVAL=30s \
+	  -e SERVICE_80_CHECK_INTERVAL=15s \
 	  -e SERVICE_80_TIMEOUT=1s \
 	  -v $(CURRENT_DIR)/examples/node_api/nginx.conf:/etc/nginx/nginx.conf:ro \
 	  -v $(CURRENT_DIR)/examples/static:/usr/share/nginx/html:ro \
 	  $(REGISTRY_ADDR)/nginx
 	echo "example is now live on http://$(SWARM_ADDR)"
 example_down: FORCE
-	docker rm -f nginx || true
+	docker rm -f example_api || true
 	docker rm -f node_api_01 || true
 	docker rm -f node_api_02 || true
 	docker network rm overlay || true

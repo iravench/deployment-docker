@@ -27,6 +27,6 @@ start example, this step starts a nginx container on swarm master, two nodejs ap
 cd ../../
 make example_up
 ```
-if everyting went well, you should now be able to access the example via the address produced from previous step, via http://swarm_master_vm_ip:80/
+if everything goes well, you should now be able to access the example via the address produced from previous step, via http://swarm_master_vm_ip:80/
 
-also, when the example app starts, it gets registered automatically into consul running on the infrastructure vm, which you can access via http://infrastructure_vm_ip:8500/ui/#/dc1/services. you should be able to see the example app just deployed listed under the name nginx-80 and in a healthy state.
+also, when the example app starts, it gets registered automatically into consul running on the infrastructure vm, which you can access via http://infrastructure_vm_ip:8500/ui/#/dc1/services. you should be able to see the example app just deployed listed under the name example-api-80 and in a healthy state.
