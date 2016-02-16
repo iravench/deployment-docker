@@ -77,7 +77,7 @@ docker $(docker-machine config $SWARM_NODE_NAME) run -d \
   --restart=always \
   --name $SWARM_NODE_NAME-consul \
   --hostname $SWARM_NODE_NAME-consul \
-  $REGISTRY_ADDR/consul -advertise $SWARM_NODE_ADDR -join $INFRA_ADDR
+  $REGISTRY_ADDR/consul-server -advertise $SWARM_NODE_ADDR -join $INFRA_ADDR
 
 printf "\e[32mStarting cadvisor...\e[0m\n"
 docker $(docker-machine config $SWARM_NODE_NAME) run -d \

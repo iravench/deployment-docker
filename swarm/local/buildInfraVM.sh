@@ -9,7 +9,12 @@ if ! docker-machine inspect infra &> /dev/null; then
   docker-machine ssh infra "echo $'EXTRA_ARGS=\"--insecure-registry '$REGISTRY_ADDR'\"' | sudo tee -a /var/lib/boot2docker/profile && sudo /etc/init.d/docker restart"
   sleep 5
   # start services
-  docker $(docker-machine config infra) run -d -p 5000:5000 --restart=always --name registry registry:2
+  docker $(docker-machine config infra) run -d \
+    -p 5000:5000 \
+    --restart=always \
+    --name registry \
+    --hostname registry \
+    registry:2
   docker $(docker-machine config infra) run -d \
     -p $INFRA_ADDR:8300:8300 \
     -p $INFRA_ADDR:8301:8301 \
@@ -22,7 +27,7 @@ if ! docker-machine inspect infra &> /dev/null; then
     --restart=always \
     --name consul \
     --hostname consul \
-    progrium/consul -server -advertise $INFRA_ADDR -bootstrap-expect 1
+    gliderlabs/consul-server -server -advertise $INFRA_ADDR -bootstrap-expect 1
 else
   INFRA_ADDR=$(docker-machine ip infra)
   REGISTRY_ADDR="$INFRA_ADDR:5000"
@@ -33,8 +38,8 @@ fi
 eval $(docker-machine env infra)
 
 REGISTRY_ADDR=$(docker-machine ip infra):5000
-PRESET_IMAGES="progrium/consul, swarm:latest, kidibox/registrator, sirile/minilogbox, sirile/kibanabox, node:slim, nginx"
-PRESET_IMAGES="$PRESET_IMAGES, progrium/logspout, prom/prometheus, google/cadvisor:latest"
+PRESET_IMAGES="gliderlabs/consul-server, swarm:latest, gliderlabs/registrator, sirile/minilogbox, sirile/kibanabox, node:slim, nginx"
+PRESET_IMAGES="$PRESET_IMAGES, gliderlabs/logspout, prom/prometheus, google/cadvisor"
 
 process_images() {
   local public_image_name=$1
