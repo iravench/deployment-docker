@@ -2,6 +2,22 @@
 
 ## develop apps on local swarm
 
+### pre-installed services
+a bunch of services are installed to provide useful features, such as monitoring, logging, and service registration, etc.
+
+#### private docker hub
+provide quick access to useful images, or internal images, installed on infrastructure vm, opened on port 5000
+#### consul
+provide service registration, discovery, dns service, etc. the master node is installed on infrastructure vm, opened on port 8500; the agent node are installed on all swarm vms, also opened on port 8500
+#### registrator
+collect container changes on installed machine, served as service registrator. installed on all swarm vms. report to consul via http
+#### prometheus
+collect and visualize container/machine performance metrics, installed on monitor vm, opened port 9090, connect to consul in order to discover cadvisor http endpoints for data point collection.
+#### cadvisor
+collect container/machine performance metrics, installed on all swarm vms, opened port 9099
+#### ELK logging stack
+TBD
+
 ### how to run the example
 if you haven't, install docker, docker-machine, and make
 
