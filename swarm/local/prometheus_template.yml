@@ -13,3 +13,10 @@ scrape_configs:
     consul_sd_configs:
       - server: 'consul_address, for service discovery'
         services: ['service_name_to_monitor, like cadvisor']
+    relabel_configs:
+      - source_labels: ['__meta_consul_service_address', '__meta_consul_service_port']
+        separator: ':'
+        regex: '(.*)'
+        target_label: '__address__'
+        replacement: '$1'
+

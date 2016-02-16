@@ -78,6 +78,18 @@ docker $(docker-machine config $SWARM_NODE_NAME) run -d \
   --hostname $SWARM_NODE_NAME-consul \
   $REGISTRY_ADDR/consul -advertise $SWARM_NODE_ADDR -join $INFRA_ADDR
 
+printf "\e[32mStarting cadvisor...\e[0m\n"
+docker $(docker-machine config $SWARM_NODE_NAME) run -d \
+  --volume=/:/rootfs:ro \
+  --volume=/var/run:/var/run:rw \
+  --volume=/sys:/sys:ro \
+  --volume=/var/lib/docker/:/var/lib/docker:ro \
+  --volume=/sys/fs/cgroup:/sys/fs/cgroup:ro \
+  --publish=$SWARM_NODE_ADDR:9099:8080 \
+  --restart=always \
+  --name cadvisor \
+  $REGISTRY_ADDR/cadvisor
+
 # by applying the -ip option, we force registrator to use host external ip when registering services
 # this is because we only want register containers which expose ports on the host
 # for those not exposing any but considered parts of an application, could gain access to each other through overlay networking
