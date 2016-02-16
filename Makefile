@@ -14,8 +14,10 @@ all:
 	@echo "  * example_down         - stop & remove example app from local swarm cluster"
 local_infra_create:
 	./swarm/local/buildInfraVM.sh
+	./swarm/local/buildMonitorVM.sh
 	docker-machine ls
 local_infra_destroy:
+	docker-machine rm -f monitor
 	docker-machine rm -f infra
 	docker-machine ls
 local_swarm_create:
