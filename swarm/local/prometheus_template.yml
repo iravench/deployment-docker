@@ -9,7 +9,7 @@ global:
     monitor: 'swarm-monitor'
 
 scrape_configs:
-  - job_name: 'cadvisor'
+  - job_name: 'job name'
     consul_sd_configs:
-      - server: '192.168.99.100:8500'
-        services: ['cadvisor']
+      - server: 'consul_address, for service discovery'
+        services: ['service_name_to_monitor, like cadvisor']
