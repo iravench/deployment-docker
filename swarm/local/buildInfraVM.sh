@@ -5,6 +5,7 @@ if ! docker-machine inspect infra &> /dev/null; then
   docker-machine create --driver virtualbox --virtualbox-memory 2048 infra
   INFRA_ADDR=$(docker-machine ip infra)
   REGISTRY_ADDR="$INFRA_ADDR:5000"
+  #TBD config a secure registry
   docker-machine ssh infra "echo $'EXTRA_ARGS=\"--insecure-registry '$REGISTRY_ADDR'\"' | sudo tee -a /var/lib/boot2docker/profile && sudo /etc/init.d/docker restart"
   sleep 5
   # start services
@@ -32,7 +33,7 @@ fi
 eval $(docker-machine env infra)
 
 REGISTRY_ADDR=$(docker-machine ip infra):5000
-PRESET_IMAGES="progrium/consul, swarm:latest, kidibox/registrator, sirile/kibanabox, node:slim, nginx"
+PRESET_IMAGES="progrium/consul, swarm:latest, kidibox/registrator, sirile/minilogbox, sirile/kibanabox, node:slim, nginx"
 PRESET_IMAGES="$PRESET_IMAGES, progrium/logspout, prom/prometheus, google/cadvisor:latest"
 
 process_images() {

@@ -15,22 +15,40 @@ if ! docker-machine inspect $MONITOR_NAME &> /dev/null; then
     --engine-insecure-registry=$REGISTRY_ADDR \
     $MONITOR_NAME
   MONITOR_ADDR=$(docker-machine ip $MONITOR_NAME)
+
   # start services
   printf "\e[32mStart initiating monitor services...\e[0m\n"
   printf "\e[32mInitiating prometheus...\e[0m\n"
   PERF_MONITOR_NAME="cadvisor"
+  ELASTICSEARCH_ADDR="http://$MONITOR_ADDR:9200"
   sed \
     -e "s/- job_name:.*/- job_name: '$PERF_MONITOR_NAME'/g" \
     -e "s/- server:.*/- server: '$CONSUL_ADDR'/g" \
     -e "s/services:.*/services: ['$PERF_MONITOR_NAME']/g" \
     $CURRENT_DIR/prometheus_template.yml > $TEMP_DIR/prometheus.yml
-  # TBD: persist data via data container so monitor data could survive monitor vm down time.
+  # TBD: persist data via data volume container so monitor data could survive monitor vm down time.
   docker $(docker-machine config $MONITOR_NAME) run -d \
     -p 9090:9090 \
     -v $TEMP_DIR/prometheus.yml:/etc/prometheus/prometheus.yml \
     --restart=always \
     --name prometheus \
+    --hostname prometheus \
     $REGISTRY_ADDR/prometheus
+
+  printf "\e[32mInitiating logbox...\e[0m\n"
+  docker $(docker-machine config $MONITOR_NAME) run -d \
+    -p 9080:5000/udp \
+    -p 9200:9200 \
+    --restart=always \
+    --name logbox \
+    --hostname logbox \
+    $REGISTRY_ADDR/minilogbox
+  docker $(docker-machine config $MONITOR_NAME) run -d \
+    -p 9060:5601 \
+    --restart=always \
+    --name kibanabox \
+    --hostname kibanabox \
+    $REGISTRY_ADDR/kibanabox $ELASTICSEARCH_ADDR
 else
   MONITOR_ADDR=$(docker-machine ip $MONITOR_NAME)
   printf "\e[32mThe monitor vm is already running at $MONITOR_ADDR...\e[0m\n"

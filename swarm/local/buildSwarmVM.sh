@@ -21,6 +21,7 @@ MASTER_NAME="swarm"
 INFRA_ADDR=$(docker-machine ip infra)
 REGISTRY_ADDR="$INFRA_ADDR:5000"
 CONSUL_ADDR="$INFRA_ADDR:8500"
+LOGSTASH_ADDR=syslog://$(docker-machine ip monitor):9080
 if [ $1 == "master" ]; then
   SWARM_NODE_NAME=$MASTER_NAME
   if ! docker-machine inspect $SWARM_NODE_NAME &> /dev/null; then
@@ -85,10 +86,20 @@ docker $(docker-machine config $SWARM_NODE_NAME) run -d \
   --volume=/sys:/sys:ro \
   --volume=/var/lib/docker/:/var/lib/docker:ro \
   --volume=/sys/fs/cgroup:/sys/fs/cgroup:ro \
-  --publish=$SWARM_NODE_ADDR:9099:8080 \
+  --publish=$SWARM_NODE_ADDR:9090:8080 \
   --restart=always \
   --name cadvisor \
+  --hostname cadvisor \
   $REGISTRY_ADDR/cadvisor
+
+printf "\e[32mStarting logspout...\e[0m\n"
+docker $(docker-machine config $SWARM_NODE_NAME) run -d \
+  -p $SWARM_NODE_ADDR:9080:8000 \
+  -v /var/run/docker.sock:/tmp/docker.sock \
+  --restart=always \
+  --name logspout \
+  --hostname logspout \
+  $REGISTRY_ADDR/logspout $LOGSTASH_ADDR
 
 # by applying the -ip option, we force registrator to use host external ip when registering services
 # this is because we only want register containers which expose ports on the host
