@@ -20,7 +20,7 @@ fi
 MASTER_NAME="swarm"
 INFRA_ADDR=$(docker-machine ip infra)
 REGISTRY_ADDR="$INFRA_ADDR:5000"
-CONSUL_ADDR="$INFRA_ADDR:8500"
+CONSUL_SERVER_ADDR="$INFRA_ADDR:8500"
 LOGSTASH_ADDR=syslog://$(docker-machine ip monitor):9080
 if [ $1 == "master" ]; then
   SWARM_NODE_NAME=$MASTER_NAME
@@ -29,11 +29,10 @@ if [ $1 == "master" ]; then
     docker-machine create \
       --driver virtualbox \
       --swarm --swarm-master \
-      --swarm-discovery consul://$CONSUL_ADDR \
+      --swarm-discovery consul://$CONSUL_SERVER_ADDR \
       --swarm-image $REGISTRY_ADDR/swarm \
-      --engine-opt="cluster-store=consul://$CONSUL_ADDR" \
-      --engine-opt="cluster-advertise=eth1:2376" \
-      --engine-opt="dns=172.17.0.1" \
+      --engine-opt cluster-store=consul://$CONSUL_SERVER_ADDR \
+      --engine-opt cluster-advertise=eth1:2376 \
       --engine-insecure-registry=$REGISTRY_ADDR \
       $LABELS \
       $SWARM_NODE_NAME
@@ -49,11 +48,10 @@ else
     docker-machine create \
       --driver virtualbox \
       --swarm \
-      --swarm-discovery consul://$CONSUL_ADDR \
+      --swarm-discovery consul://$CONSUL_SERVER_ADDR \
       --swarm-image $REGISTRY_ADDR/swarm \
-      --engine-opt="cluster-store=consul://$CONSUL_ADDR" \
-      --engine-opt="cluster-advertise=eth1:2376" \
-      --engine-opt="dns=172.17.0.1" \
+      --engine-opt cluster-store=consul://$CONSUL_SERVER_ADDR \
+      --engine-opt cluster-advertise=eth1:2376 \
       --engine-insecure-registry=$REGISTRY_ADDR \
       $LABELS \
       $SWARM_NODE_NAME
@@ -73,11 +71,26 @@ docker $(docker-machine config $SWARM_NODE_NAME) run -d \
   -p $SWARM_NODE_ADDR:8302:8302/udp \
   -p $SWARM_NODE_ADDR:8400:8400 \
   -p $SWARM_NODE_ADDR:8500:8500 \
-  -p 172.17.0.1:53:53 -p 172.17.0.1:53:53/udp \
+  -p 172.17.0.1:8600:8600 \
+  -p 172.17.0.1:8600:8600/udp \
+  -p 172.17.0.1:53:53 \
+  -p 172.17.0.1:53:53/udp \
   --restart=always \
   --name $SWARM_NODE_NAME-consul \
   --hostname $SWARM_NODE_NAME-consul \
   $REGISTRY_ADDR/consul-server -advertise $SWARM_NODE_ADDR -join $INFRA_ADDR
+CONSUL_ADDR="$SWARM_NODE_ADDR:8500"
+
+# by applying the -ip option, we force registrator to use host external ip when registering services
+# this is because we only want register containers which expose ports on the host
+# for those not exposing any but considered parts of an application, could gain access to each other through overlay networking
+printf "\e[32mStarting registrator...\e[0m\n"
+docker $(docker-machine config $SWARM_NODE_NAME) run -d \
+  --name=$SWARM_NODE_NAME-registrator \
+  --hostname=$SWARM_NODE_NAME-registrator \
+  --restart=always \
+  --volume=/var/run/docker.sock:/tmp/docker.sock \
+  $REGISTRY_ADDR/registrator -ip $SWARM_NODE_ADDR consul://$CONSUL_ADDR -cleanup
 
 printf "\e[32mStarting cadvisor...\e[0m\n"
 docker $(docker-machine config $SWARM_NODE_NAME) run -d \
@@ -100,14 +113,3 @@ docker $(docker-machine config $SWARM_NODE_NAME) run -d \
   --name logspout \
   --hostname logspout \
   $REGISTRY_ADDR/logspout $LOGSTASH_ADDR
-
-# by applying the -ip option, we force registrator to use host external ip when registering services
-# this is because we only want register containers which expose ports on the host
-# for those not exposing any but considered parts of an application, could gain access to each other through overlay networking
-printf "\e[32mStarting registrator...\e[0m\n"
-docker $(docker-machine config $SWARM_NODE_NAME) run -d \
-  --name=$SWARM_NODE_NAME-registrator \
-  --hostname=$SWARM_NODE_NAME-registrator \
-  --restart=always \
-  --volume=/var/run/docker.sock:/tmp/docker.sock \
-  $REGISTRY_ADDR/registrator -ip $SWARM_NODE_ADDR consul://$CONSUL_ADDR -cleanup

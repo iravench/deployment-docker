@@ -4,8 +4,10 @@ SWARM_ADDR=$(shell docker-machine ip swarm)
 
 all:
 	@echo "Available targets:"
-	@echo "  * local_infra_create   - create local infrastructure vm"
-	@echo "  * local_infra_destroy  - destroy local infrastructure vm"
+	@echo "  * local_infra_create   - create local infrastructure"
+	@echo "  * local_infra_destroy  - destroy local infrastructure"
+	@echo "  * local_infra_up       - start local infrastructure"
+	@echo "  * local_infra_down     - stop local infrastructure"
 	@echo "  * local_swarm_create   - create local swarm cluster"
 	@echo "  * local_swarm_destroy  - destroy local swarm cluster"
 	@echo "  * local_swarm_up       - start local swarm cluster"
@@ -15,6 +17,14 @@ all:
 local_infra_create:
 	./swarm/local/buildInfraVM.sh
 	./swarm/local/buildMonitorVM.sh
+	docker-machine ls
+local_infra_up:
+	docker-machine start infra
+	docker-machine start monitor
+	docker-machine ls
+local_infra_down:
+	docker-machine stop monitor
+	docker-machine stop infra
 	docker-machine ls
 local_infra_destroy:
 	docker-machine rm -f monitor

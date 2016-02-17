@@ -2,19 +2,18 @@
 
 # create the infra vm if it doesn't already exist
 if ! docker-machine inspect infra &> /dev/null; then
-  docker-machine create --driver virtualbox --virtualbox-memory 2048 infra
+  docker-machine create \
+    --driver virtualbox \
+    --virtualbox-memory 2048 \
+    infra
   INFRA_ADDR=$(docker-machine ip infra)
   REGISTRY_ADDR="$INFRA_ADDR:5000"
-  #TBD config a secure registry
+  CONSUL_SERVER_ADDR="$INFRA_ADDR:8500"
   docker-machine ssh infra "echo $'EXTRA_ARGS=\"--insecure-registry '$REGISTRY_ADDR'\"' | sudo tee -a /var/lib/boot2docker/profile && sudo /etc/init.d/docker restart"
   sleep 5
+
   # start services
-  docker $(docker-machine config infra) run -d \
-    -p 5000:5000 \
-    --restart=always \
-    --name registry \
-    --hostname registry \
-    registry:2
+  printf "\e[32mStart initiating consul server...\e[0m\n"
   docker $(docker-machine config infra) run -d \
     -p $INFRA_ADDR:8300:8300 \
     -p $INFRA_ADDR:8301:8301 \
@@ -23,23 +22,43 @@ if ! docker-machine inspect infra &> /dev/null; then
     -p $INFRA_ADDR:8302:8302/udp \
     -p $INFRA_ADDR:8400:8400 \
     -p $INFRA_ADDR:8500:8500 \
-    -p 172.17.0.1:53:53 -p 172.17.0.1:53:53/udp \
+    -p 172.17.0.1:8600:8600 \
+    -p 172.17.0.1:8600:8600/udp \
+    -p 172.17.0.1:53:53 \
+    -p 172.17.0.1:53:53/udp \
     --restart=always \
     --name consul \
     --hostname consul \
     gliderlabs/consul-server -server -advertise $INFRA_ADDR -bootstrap-expect 1
+
+  printf "\e[32mStarting registrator...\e[0m\n"
+  docker $(docker-machine config infra) run -d \
+    --name=infra-registrator \
+    --hostname=infra-registrator \
+    --restart=always \
+    --volume=/var/run/docker.sock:/tmp/docker.sock \
+    gliderlabs/registrator -ip $INFRA_ADDR consul://$CONSUL_SERVER_ADDR -cleanup
+
+  printf "\e[32mStart initiating registry...\e[0m\n"
+  docker $(docker-machine config infra) run -d \
+    -p 5000:5000 \
+    --restart=always \
+    --name registry \
+    --hostname registry \
+    registry:2
 else
   INFRA_ADDR=$(docker-machine ip infra)
   REGISTRY_ADDR="$INFRA_ADDR:5000"
   printf "\e[32mThe infrastructure vm is already running at $INFRA_ADDR...\e[0m\n"
 fi
 
-# init registry with pre-defined set of images for private use
+# init registry service with a pre-defined set of images
 eval $(docker-machine env infra)
 
 REGISTRY_ADDR=$(docker-machine ip infra):5000
-PRESET_IMAGES="gliderlabs/consul-server, swarm:latest, gliderlabs/registrator, sirile/minilogbox, sirile/kibanabox, node:slim, nginx"
-PRESET_IMAGES="$PRESET_IMAGES, gliderlabs/logspout, prom/prometheus, google/cadvisor"
+PRESET_IMAGES="gliderlabs/consul-server, gliderlabs/logspout, gliderlabs/registrator, swarm:latest"
+PRESET_IMAGES="$PRESET_IMAGES, sirile/minilogbox, sirile/kibanabox, prom/prometheus, google/cadvisor"
+PRESET_IMAGES="$PRESET_IMAGES, node:slim, nginx"
 
 process_images() {
   local public_image_name=$1

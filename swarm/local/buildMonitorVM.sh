@@ -2,7 +2,7 @@
 
 INFRA_ADDR=$(docker-machine ip infra)
 REGISTRY_ADDR="$INFRA_ADDR:5000"
-CONSUL_ADDR="$INFRA_ADDR:8500"
+CONSUL_SERVER_ADDR="$INFRA_ADDR:8500"
 MONITOR_NAME="monitor"
 CURRENT_DIR=$(cd $(dirname $0); pwd)
 TEMP_DIR=$CURRENT_DIR/../../.tmp
@@ -17,7 +17,33 @@ if ! docker-machine inspect $MONITOR_NAME &> /dev/null; then
   MONITOR_ADDR=$(docker-machine ip $MONITOR_NAME)
 
   # start services
-  printf "\e[32mStart initiating monitor services...\e[0m\n"
+  printf "\e[32mStarting consul agent...\e[0m\n"
+  docker $(docker-machine config $MONITOR_NAME) run -d \
+    -p $MONITOR_ADDR:8300:8300 \
+    -p $MONITOR_ADDR:8301:8301 \
+    -p $MONITOR_ADDR:8301:8301/udp \
+    -p $MONITOR_ADDR:8302:8302 \
+    -p $MONITOR_ADDR:8302:8302/udp \
+    -p $MONITOR_ADDR:8400:8400 \
+    -p $MONITOR_ADDR:8500:8500 \
+    -p 172.17.0.1:8600:8600 \
+    -p 172.17.0.1:8600:8600/udp \
+    -p 172.17.0.1:53:53 \
+    -p 172.17.0.1:53:53/udp \
+    --restart=always \
+    --name $MONITOR_NAME-consul \
+    --hostname $MONITOR_NAME-consul \
+    $REGISTRY_ADDR/consul-server -advertise $MONITOR_ADDR -join $INFRA_ADDR
+  CONSUL_ADDR="$MONITOR_ADDR:8500"
+
+  printf "\e[32mStarting registrator...\e[0m\n"
+  docker $(docker-machine config $MONITOR_NAME) run -d \
+    --name=$MONITOR_NAME-registrator \
+    --hostname=$MONITOR_NAME-registrator \
+    --restart=always \
+    --volume=/var/run/docker.sock:/tmp/docker.sock \
+    $REGISTRY_ADDR/registrator -ip $MONITOR_ADDR consul://$CONSUL_ADDR -cleanup
+
   printf "\e[32mInitiating prometheus...\e[0m\n"
   PERF_MONITOR_NAME="cadvisor"
   ELASTICSEARCH_ADDR="http://$MONITOR_ADDR:9200"
