@@ -2,7 +2,6 @@
 
 INFRA_ADDR=$(docker-machine ip infra)
 REGISTRY_ADDR="$INFRA_ADDR:5000"
-CONSUL_SERVER_ADDR="$INFRA_ADDR:8500"
 MONITOR_NAME="monitor"
 CURRENT_DIR=$(cd $(dirname $0); pwd)
 TEMP_DIR=$CURRENT_DIR/../../.tmp
@@ -26,15 +25,14 @@ if ! docker-machine inspect $MONITOR_NAME &> /dev/null; then
     -p $MONITOR_ADDR:8302:8302/udp \
     -p $MONITOR_ADDR:8400:8400 \
     -p $MONITOR_ADDR:8500:8500 \
-    -p 172.17.0.1:8600:8600 \
-    -p 172.17.0.1:8600:8600/udp \
-    -p 172.17.0.1:53:53 \
-    -p 172.17.0.1:53:53/udp \
+    -p 172.17.0.1:8500:8500 \
+    -p 172.17.0.1:53:8600 \
+    -p 172.17.0.1:53:8600/udp \
     --restart=always \
     --name $MONITOR_NAME-consul \
     --hostname $MONITOR_NAME-consul \
-    $REGISTRY_ADDR/consul-server -advertise $MONITOR_ADDR -join $INFRA_ADDR
-  CONSUL_ADDR="$MONITOR_ADDR:8500"
+    $REGISTRY_ADDR/consul-agent -advertise $MONITOR_ADDR -client 0.0.0.0 -join $INFRA_ADDR
+  CONSUL_ADDR="172.17.0.1:8500"
 
   printf "\e[32mStarting registrator...\e[0m\n"
   docker $(docker-machine config $MONITOR_NAME) run -d \
@@ -46,7 +44,7 @@ if ! docker-machine inspect $MONITOR_NAME &> /dev/null; then
 
   printf "\e[32mInitiating prometheus...\e[0m\n"
   PERF_MONITOR_NAME="cadvisor"
-  ELASTICSEARCH_ADDR="http://$MONITOR_ADDR:9200"
+  ELASTICSEARCH_ADDR="http://172.17.0.1:9200"
   sed \
     -e "s/- job_name:.*/- job_name: '$PERF_MONITOR_NAME'/g" \
     -e "s/- server:.*/- server: '$CONSUL_ADDR'/g" \
@@ -64,7 +62,7 @@ if ! docker-machine inspect $MONITOR_NAME &> /dev/null; then
   printf "\e[32mInitiating logbox...\e[0m\n"
   docker $(docker-machine config $MONITOR_NAME) run -d \
     -p 9080:5000/udp \
-    -p 9200:9200 \
+    -p 172.17.0.1:9200:9200 \
     --restart=always \
     --name logbox \
     --hostname logbox \

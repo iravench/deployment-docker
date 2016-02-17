@@ -8,7 +8,6 @@ if ! docker-machine inspect infra &> /dev/null; then
     infra
   INFRA_ADDR=$(docker-machine ip infra)
   REGISTRY_ADDR="$INFRA_ADDR:5000"
-  CONSUL_SERVER_ADDR="$INFRA_ADDR:8500"
   docker-machine ssh infra "echo $'EXTRA_ARGS=\"--insecure-registry '$REGISTRY_ADDR'\"' | sudo tee -a /var/lib/boot2docker/profile && sudo /etc/init.d/docker restart"
   sleep 5
 
@@ -22,14 +21,14 @@ if ! docker-machine inspect infra &> /dev/null; then
     -p $INFRA_ADDR:8302:8302/udp \
     -p $INFRA_ADDR:8400:8400 \
     -p $INFRA_ADDR:8500:8500 \
-    -p 172.17.0.1:8600:8600 \
-    -p 172.17.0.1:8600:8600/udp \
-    -p 172.17.0.1:53:53 \
-    -p 172.17.0.1:53:53/udp \
+    -p 172.17.0.1:8500:8500 \
+    -p 172.17.0.1:53:8600 \
+    -p 172.17.0.1:53:8600/udp \
     --restart=always \
-    --name consul \
-    --hostname consul \
-    gliderlabs/consul-server -server -advertise $INFRA_ADDR -bootstrap-expect 1
+    --name infra-consul \
+    --hostname infra-consul \
+    gliderlabs/consul-server -advertise $INFRA_ADDR -client 0.0.0.0 -bootstrap-expect 1
+  CONSUL_ADDR="172.17.0.1:8500"
 
   printf "\e[32mStarting registrator...\e[0m\n"
   docker $(docker-machine config infra) run -d \
@@ -37,7 +36,7 @@ if ! docker-machine inspect infra &> /dev/null; then
     --hostname=infra-registrator \
     --restart=always \
     --volume=/var/run/docker.sock:/tmp/docker.sock \
-    gliderlabs/registrator -ip $INFRA_ADDR consul://$CONSUL_SERVER_ADDR -cleanup
+    gliderlabs/registrator -ip $INFRA_ADDR consul://$CONSUL_ADDR -cleanup
 
   printf "\e[32mStart initiating registry...\e[0m\n"
   docker $(docker-machine config infra) run -d \
@@ -56,7 +55,7 @@ fi
 eval $(docker-machine env infra)
 
 REGISTRY_ADDR=$(docker-machine ip infra):5000
-PRESET_IMAGES="gliderlabs/consul-server, gliderlabs/logspout, gliderlabs/registrator, swarm:latest"
+PRESET_IMAGES="gliderlabs/consul-server, gliderlabs/consul-agent, gliderlabs/logspout, gliderlabs/registrator, swarm:latest"
 PRESET_IMAGES="$PRESET_IMAGES, sirile/minilogbox, sirile/kibanabox, prom/prometheus, google/cadvisor"
 PRESET_IMAGES="$PRESET_IMAGES, node:slim, nginx"
 

@@ -71,15 +71,14 @@ docker $(docker-machine config $SWARM_NODE_NAME) run -d \
   -p $SWARM_NODE_ADDR:8302:8302/udp \
   -p $SWARM_NODE_ADDR:8400:8400 \
   -p $SWARM_NODE_ADDR:8500:8500 \
-  -p 172.17.0.1:8600:8600 \
-  -p 172.17.0.1:8600:8600/udp \
-  -p 172.17.0.1:53:53 \
-  -p 172.17.0.1:53:53/udp \
+  -p 172.17.0.1:8500:8500 \
+  -p 172.17.0.1:53:8600 \
+  -p 172.17.0.1:53:8600/udp \
   --restart=always \
   --name $SWARM_NODE_NAME-consul \
   --hostname $SWARM_NODE_NAME-consul \
-  $REGISTRY_ADDR/consul-server -advertise $SWARM_NODE_ADDR -join $INFRA_ADDR
-CONSUL_ADDR="$SWARM_NODE_ADDR:8500"
+  $REGISTRY_ADDR/consul-agent -advertise $SWARM_NODE_ADDR -client 0.0.0.0 -join $INFRA_ADDR
+CONSUL_ADDR="172.17.0.1:8500"
 
 # by applying the -ip option, we force registrator to use host external ip when registering services
 # this is because we only want register containers which expose ports on the host
