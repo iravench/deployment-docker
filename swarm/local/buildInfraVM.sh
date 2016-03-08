@@ -57,7 +57,7 @@ eval $(docker-machine env infra)
 REGISTRY_ADDR=$(docker-machine ip infra):5000
 PRESET_IMAGES="gliderlabs/consul-server, gliderlabs/consul-agent, gliderlabs/logspout, gliderlabs/registrator, swarm:latest"
 PRESET_IMAGES="$PRESET_IMAGES, sirile/minilogbox, sirile/kibanabox, prom/prometheus, google/cadvisor"
-PRESET_IMAGES="$PRESET_IMAGES, node:slim, nginx"
+PRESET_IMAGES="$PRESET_IMAGES, mhart/alpine-node:latest, nginx"
 
 process_images() {
   local public_image_name=$1
