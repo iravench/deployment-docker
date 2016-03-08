@@ -81,8 +81,8 @@ docker $(docker-machine config $SWARM_NODE_NAME) run -d \
 CONSUL_ADDR="172.17.0.1:8500"
 
 # by applying the -ip option, we force registrator to use host external ip when registering services
-# this is because we only want register containers which expose ports on the host
-# for those not exposing any but considered parts of an application, could gain access to each other through overlay networking
+# this is because we only want to register containers which expose ports on the host
+# for those not exposing any ports but considered parts of an application, they could access each other through overlay networking
 printf "\e[32mStarting registrator...\e[0m\n"
 docker $(docker-machine config $SWARM_NODE_NAME) run -d \
   --name=$SWARM_NODE_NAME-registrator \
