@@ -2,7 +2,7 @@ the messaging module prototype design and workflow draft.
 
 ![diagram](/examples/msg-prototype/msg-prototyping.png?raw=true "diagram")
 
-# component breakdown
+# Component breakdown
 
 ## Session broker
 
@@ -21,6 +21,7 @@ the policy could be defined as such, so that one user-device-clientIp combinatio
 * if the client retries and succeeded, and previous instruction has not been used, then it can be returned as such;
 * if the client retries and succeeded, but previous instruction is in use, then it should be invalidated and any existing session base upon that should be dropped in favor of a new one;
 * if the validation failed, no instruction should be returned;
+
 a session-instruction may contain a token for later stage validation use, a WS-Front-Machine IP to connect to, and other necessary information.
 
 a session-broker depends on a WS-Front-Machine-Selector or FM-Selector for short.
