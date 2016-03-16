@@ -1,7 +1,6 @@
 the messaging module prototype design and workflow draft.
 
-# diagram
-TBD
+![diagram](/examples/msg-prototype/msg-prototyping.png?raw=true "diagram")
 
 # component breakdown
 
