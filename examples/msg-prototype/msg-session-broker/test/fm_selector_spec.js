@@ -57,6 +57,8 @@ describe('fm_selector', () => {
       let cb_for_valid_call = (err, result) => {
         expect(err).to.be.null;
         expect(result).to.exist;
+        expect(result.fm_ip).to.exist;
+        expect(result.token).to.exist;
       };
       fm_selector.allocate(valid_user, valid_conn, cb_for_valid_call);
 
