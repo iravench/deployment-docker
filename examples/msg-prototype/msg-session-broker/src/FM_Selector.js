@@ -1,6 +1,7 @@
 'use strict';
 
 import logger from './utils/logger'
+import { ValidationError } from './utils/errors'
 import fm_token from './fm_token';
 import fm_policy from './fm_policy';
 
@@ -48,13 +49,13 @@ function get_ticket(session) {
 export default function(session_repo) {
   return {
     allocate: function(user, conn, cb) {
-      if (!user) return cb(new Error('bad user'));
-      if (!user.user_id) return cb(new Error('bad user id'));
+      if (!user) return cb(new ValidationError('bad user'));
+      if (!user.user_id) return cb(new ValidationError('bad user id'));
 
-      if (!user.device_id) return cb(new Error('bad device id'));
+      if (!user.device_id) return cb(new ValidationError('bad device id'));
 
-      if (!conn) return cb(new Error('bad connection'));
-      if (!conn.ip) return cb(new Error('bad connection ip'));
+      if (!conn) return cb(new ValidationError('bad connection'));
+      if (!conn.ip) return cb(new ValidationError('bad connection ip'));
 
       return session_repo.allocate_session(user, conn, fm_policy, get_allocation_callback(cb));
     }
