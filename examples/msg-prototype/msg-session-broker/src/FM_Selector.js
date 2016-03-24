@@ -1,51 +1,62 @@
 'use strict';
 
-import log from './utils/logger'
+import logger from './utils/logger'
 import fm_token from './fm_token';
 import fm_policy from './fm_policy';
 
-function get_allocation_handler(cb) {
+const log = logger.child({widget_type: 'fm_seletor'});
+
+function get_allocation_callback(cb) {
   return (err, result) => {
     if (err) {
-      log.error(err);
-      return cb(new Error('failed on retrieving session status'));
+      let err_msg = 'session state: undetermined';
+      log.trace(err, err_msg);
+      return cb(new Error(err_msg));
     }
 
-    if (result.inactive_session && !result.active_session && !result.new_session) {
-      let inactive_session = result.inactive_session;
-      let token = fm_token.generate(inactive_session);
-      let ticket = { fm_ip: inactive_session.fm_ip, token: token };
-      log.info('inactive ticket retrieved');
+    if (result.inactive_session) {
+      log.trace('session state: inactive session found');
+      let ticket = get_ticket(result.inactive_session);
+      log.trace('ticket returned');
       return cb(null, ticket);
     }
 
-    if (result.active_session && !result.inactive_session && !result.new_session) {
-      return cb(new Error('active session already exist'));
+    if (result.active_session) {
+      let err_msg = 'session state: active session found';
+      log.trace(err_msg);
+      return cb(new Error(err_msg));
     }
 
-    if (result.new_session && !result.inactive_session && !result.active_session) {
-      let new_session = result.new_session;
-      let token = fm_token.generate(new_session);
-      let ticket = { fm_ip: new_session.fm_ip, token: token };
-      log.info('new ticket created');
+    if (result.new_session) {
+      log.trace('session state: new session created');
+      let ticket = get_ticket(result.new_session);
+      log.trace('ticket returned');
       return cb(null, ticket);
     }
 
-    return cb(new Error('unknown error'));
+    let err_msg = 'session state: unknown';
+    log.trace(err_msg);
+    return cb(new Error(err_msg));
   }
+}
+
+function get_ticket(session) {
+  let token = fm_token.generate(session);
+  return { fm_ip: session.fm_ip, token: token };
 }
 
 export default function(session_repo) {
   return {
     allocate: function(user, conn, cb) {
-      if (!user) throw new Error('bad user');
-      if (!user.user_id) throw new Error('bad user id');
-      if (!user.device_id) throw new Error('bad device id');
+      if (!user) return cb(new Error('bad user'));
+      if (!user.user_id) return cb(new Error('bad user id'));
 
-      if (!conn) throw new Error('bad connection');
-      if (!conn.ip) throw new Error('bad connection ip');
+      if (!user.device_id) return cb(new Error('bad device id'));
 
-      session_repo.allocate_session(user, conn, fm_policy, get_allocation_handler(cb));
+      if (!conn) return cb(new Error('bad connection'));
+      if (!conn.ip) return cb(new Error('bad connection ip'));
+
+      return session_repo.allocate_session(user, conn, fm_policy, get_allocation_callback(cb));
     }
   };
 }

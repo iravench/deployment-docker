@@ -20,26 +20,31 @@ describe('fm_selector', () => {
     });
 
     it('invalidate empty user parameter', () => {
-      expect(fm_selector.allocate.bind(fm_selector)).to.throw(/bad user/);
+      let cb = (err) => { expect(err.message).to.have.string('bad user'); }
+      fm_selector.allocate(null, null, cb);
     });
 
     it('invalidate user parameter without user_id', () => {
       let invalid_user = { device_id: 'device_id' };
-      expect(fm_selector.allocate.bind(fm_selector, invalid_user)).to.throw(/bad user id/);
+      let cb = (err) => { expect(err.message).to.have.string('bad user id'); }
+      fm_selector.allocate(invalid_user, null, cb);
     });
 
     it('invalidate user parameter without device_id', () => {
       let invalid_user = { user_id: 'user_id' };
-      expect(fm_selector.allocate.bind(fm_selector, invalid_user)).to.throw(/bad device id/);
+      let cb = (err) => { expect(err.message).to.have.string('bad device id'); }
+      fm_selector.allocate(invalid_user, null, cb);
     });
 
     it('invalidate empty connection parameter', () => {
-      expect(fm_selector.allocate.bind(fm_selector, valid_user)).to.throw(/bad connection/);
+      let cb = (err) => { expect(err.message).to.have.string('bad connection'); }
+      fm_selector.allocate(valid_user, null, cb);
     });
 
     it('invalidate connection parameter without ip', () => {
       let invalid_conn = {};
-      expect(fm_selector.allocate.bind(fm_selector, valid_user, invalid_conn)).to.throw(/bad connection ip/);
+      let cb = (err) => { expect(err.message).to.have.string('bad connection ip'); }
+      fm_selector.allocate(valid_user, invalid_conn, cb);
     });
   });
 
@@ -49,15 +54,14 @@ describe('fm_selector', () => {
     });
 
     it('allow only one active sessions per one user/device/ip combo', () => {
-      let cb_with_result = (err, result) => {
+      let cb_for_valid_call = (err, result) => {
+        expect(err).to.be.null;
         expect(result).to.exist;
       };
-      fm_selector.allocate(valid_user, valid_conn, cb_with_result);
+      fm_selector.allocate(valid_user, valid_conn, cb_for_valid_call);
 
-      let cb_with_error = (err, result) => {
-        expect(err).to.exist;
-      };
-      fm_selector.allocate(valid_user, valid_conn, cb_with_error);
+      let cb_for_repeated_call = (err) => { expect(err.message).to.have.string('active session found'); }
+      fm_selector.allocate(valid_user, valid_conn, cb_for_repeated_call);
     });
   });
 });
