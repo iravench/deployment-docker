@@ -6,8 +6,8 @@ import { ValidationError } from '../utils/errors'
 const log = logger.child({widget_type: 'ticketController'});
 
 export default {
-  init: (app) => {
-    app.post('/tickets', (req, res) => {
+  init: (router) => {
+    router.post('/tickets', (req, res) => {
       log.info(req, 'new ticket requested');
 
       // these information should be extracted from request

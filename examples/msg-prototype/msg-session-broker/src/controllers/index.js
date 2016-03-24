@@ -3,10 +3,10 @@
 import ticketController from './ticketController'
 
 export default {
-  init: (app) => {
-    ticketController.init(app);
+  init: (router) => {
+    ticketController.init(router);
 
-    app.get("/health", (req, res) => {
+    router.get("/health", (req, res) => {
       res.json({ status: "ok" });
     });
 
