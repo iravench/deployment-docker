@@ -1,4 +1,4 @@
-export const ValidationError = function ValidationError(message) {
+export function ValidationError(message) {
   this.name = 'ValidationError';
   this.message = message || 'validation failed';
   this.stack = (new Error()).stack;
