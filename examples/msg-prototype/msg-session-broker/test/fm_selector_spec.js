@@ -7,11 +7,11 @@ import FM_Selector from '../src/FM_Selector';
 const fm_selector = new FM_Selector(repo);
 
 describe('fm_selector', () => {
-  const valid_user = { user_id: 'user_id', device_id: 'device_id' };
-  const valid_conn = { ip: '192.168.1.111' };
+  const valid_user = repo.valid_user;
+  const valid_conn = repo.valid_conn;
 
   describe('#allocate validation', () => {
-    before(() => {
+    beforeEach(() => {
       repo.reset();
     });
 
@@ -49,21 +49,41 @@ describe('fm_selector', () => {
   });
 
   describe('#allocate session', () => {
-    before(() => {
+    beforeEach(() => {
       repo.reset();
     });
 
-    it('allow only one active sessions per one user/device/ip combo', () => {
-      let cb_for_valid_call = (err, result) => {
+    it('unable to dertermin session state in case of repository failure', () => {
+      repo.mimic_db_failure();
+      let cb = (err) => { expect(err.message).to.have.string('undetermined'); }
+      fm_selector.allocate(valid_user, valid_conn, cb);
+    });
+
+    it('allow one session per user/device/ip combo', () => {
+      let cb = (err, result) => {
         expect(err).to.be.null;
         expect(result).to.exist;
         expect(result.fm_ip).to.exist;
         expect(result.token).to.exist;
       };
-      fm_selector.allocate(valid_user, valid_conn, cb_for_valid_call);
+      fm_selector.allocate(valid_user, valid_conn, cb);
+    });
 
-      let cb_for_repeated_call = (err) => { expect(err.message).to.have.string('active session found'); }
-      fm_selector.allocate(valid_user, valid_conn, cb_for_repeated_call);
+    it('inactive session will be resued for repeated calls', () => {
+      repo.prepare_inactive_session();
+      let cb = (err, result) => {
+        expect(err).to.be.null;
+        expect(result).to.exist;
+        expect(result.fm_ip).to.exist;
+        expect(result.token).to.exist;
+      };
+      fm_selector.allocate(valid_user, valid_conn, cb);
+    });
+
+    it('existing active session will fail subsequent calls', () => {
+      repo.prepare_active_session();
+      let cb = (err) => { expect(err.message).to.have.string('active session found'); };
+      fm_selector.allocate(valid_user, valid_conn, cb);
     });
   });
 });
