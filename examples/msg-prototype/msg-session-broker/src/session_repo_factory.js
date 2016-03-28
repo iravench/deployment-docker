@@ -10,17 +10,17 @@ export default function(config) {
   return {
     allocate_session: function(user, conn, fm) {
       return impl.get_none_closed_session(user, conn).then(
-        (found_session) => {
-          if (found_session) {
-            if (found_session.status == 'active')
-              return { active_session: found_session };
-            else
-              return { inactive_session: found_session };
+        (session) => {
+          if (session) {
+            return { session: session };
           }
           else {
             return impl.create_new_session(user, conn, fm).then(
               (new_session) => {
-                return { new_session: new_session };
+                // override 'inactive' to 'new' from application level
+                // to indicate that this session is in fact newly created
+                new_session.status = 'new';
+                return { session: new_session };
               },
               (err) => {
                 let err_msg = 'fail on creating new session data';
