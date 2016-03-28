@@ -2,6 +2,7 @@
 
 import logger from '../utils/logger'
 import { ValidationError } from '../utils/errors'
+import repo_impl from '../../test/fixture/session_repo_impl';
 
 const log = logger.child({widget_type: 'ticketController'});
 
@@ -10,22 +11,19 @@ export default {
     router.post('/tickets', (req, res) => {
       log.info(req, 'new ticket requested');
 
-      // these information should be extracted from request
-      const user = { user_id: 'user_id', device_id: 'device_id' };
-      const conn = { ip: '192.168.1.111' };
-
-      req.app.locals.fm_selector.allocate(user, conn, (err, ticket) => {
-        if (err) {
+      // user and conn should be extracted from request
+      req.app.locals.fm_selector.allocate(repo_impl.valid_user, repo_impl.valid_conn).then(
+        (ticket) => {
+          log.info(res, 'new ticket created');
+          res.json(ticket);
+        },
+        (err) => {
           let status = 500;
           if (err instanceof ValidationError) status = 400;
           res.status(status);
           // might want to extract this bit
           res.json({status: { code: status, message: err.message }});
-        } else {
-          log.info(res, 'new ticket created');
-          res.json(ticket);
-        }
-      });
+        });
     });
   }
 };

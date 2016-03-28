@@ -1,18 +1,22 @@
 'use strict';
 
 import { expect } from 'chai';
-import repo from './fixture/session_repo';
-import FM_Selector from '../src/FM_Selector';
+import repo_impl from './fixture/session_repo_impl';
+import fm_token from '../src/fm_token';
+import fm_policy from '../src/fm_policy';
+import repo_factory from '../src/session_repo_factory';
+import fm_selector_factory from '../src/fm_selector_factory';
 
-const fm_selector = new FM_Selector(repo);
+const repo = repo_factory({ impl: repo_impl });
+const fm_selector = fm_selector_factory({ repo: repo, policy: fm_policy, token: fm_token });
 
 describe('fm_selector', () => {
-  const valid_user = repo.valid_user;
-  const valid_conn = repo.valid_conn;
+  const valid_user = repo_impl.valid_user;
+  const valid_conn = repo_impl.valid_conn;
 
   describe('#allocate validation', () => {
     beforeEach(() => {
-      repo.reset();
+      repo_impl.reset();
     });
 
     it('response to allocate', () => {
@@ -20,70 +24,77 @@ describe('fm_selector', () => {
     });
 
     it('invalidate empty user parameter', () => {
-      let cb = (err) => { expect(err.message).to.have.string('bad user'); }
-      fm_selector.allocate(null, null, cb);
+      return fm_selector
+        .allocate(null, null)
+        .catch(err => { expect(err.message).to.have.string('bad user'); });
     });
 
     it('invalidate user parameter without user_id', () => {
       let invalid_user = { device_id: 'device_id' };
-      let cb = (err) => { expect(err.message).to.have.string('bad user id'); }
-      fm_selector.allocate(invalid_user, null, cb);
+      return fm_selector
+        .allocate(invalid_user, null)
+        .catch(err => { expect(err.message).to.have.string('bad user id'); });
     });
 
     it('invalidate user parameter without device_id', () => {
       let invalid_user = { user_id: 'user_id' };
-      let cb = (err) => { expect(err.message).to.have.string('bad device id'); }
-      fm_selector.allocate(invalid_user, null, cb);
+      return fm_selector
+        .allocate(invalid_user, null)
+        .catch(err => { expect(err.message).to.have.string('bad device id'); });
     });
 
     it('invalidate empty connection parameter', () => {
-      let cb = (err) => { expect(err.message).to.have.string('bad connection'); }
-      fm_selector.allocate(valid_user, null, cb);
+      return fm_selector
+        .allocate(valid_user, null)
+        .catch(err => { expect(err.message).to.have.string('bad connection'); });
     });
 
     it('invalidate connection parameter without ip', () => {
       let invalid_conn = {};
-      let cb = (err) => { expect(err.message).to.have.string('bad connection ip'); }
-      fm_selector.allocate(valid_user, invalid_conn, cb);
+      return fm_selector
+        .allocate(valid_user, invalid_conn)
+        .catch(err => { expect(err.message).to.have.string('bad connection ip'); });
     });
   });
 
   describe('#allocate session', () => {
     beforeEach(() => {
-      repo.reset();
+      repo_impl.reset();
     });
 
-    it('unable to dertermin session state in case of repository failure', () => {
-      repo.mimic_db_failure();
-      let cb = (err) => { expect(err.message).to.have.string('undetermined'); }
-      fm_selector.allocate(valid_user, valid_conn, cb);
+    it('report error in case of repository failure', () => {
+      repo_impl.mimic_db_failure();
+      return fm_selector
+        .allocate(valid_user, valid_conn)
+        .catch(err => { expect(err.message).to.have.string('fail on accessing session storage'); });
     });
 
     it('allow one session per user/device/ip combo', () => {
-      let cb = (err, result) => {
-        expect(err).to.be.null;
-        expect(result).to.exist;
-        expect(result.fm_ip).to.exist;
-        expect(result.token).to.exist;
-      };
-      fm_selector.allocate(valid_user, valid_conn, cb);
+      return fm_selector
+        .allocate(valid_user, valid_conn)
+        .then(result => {
+          expect(result).to.exist;
+          expect(result.fm_ip).to.exist;
+          expect(result.token).to.exist;
+        });
     });
 
     it('inactive session will be resued for repeated calls', () => {
-      repo.prepare_inactive_session();
-      let cb = (err, result) => {
-        expect(err).to.be.null;
-        expect(result).to.exist;
-        expect(result.fm_ip).to.exist;
-        expect(result.token).to.exist;
-      };
-      fm_selector.allocate(valid_user, valid_conn, cb);
+      repo_impl.prepare_inactive_session();
+      return fm_selector
+        .allocate(valid_user, valid_conn)
+        .then(result => {
+          expect(result).to.exist;
+          expect(result.fm_ip).to.exist;
+          expect(result.token).to.exist;
+        });
     });
 
     it('existing active session will fail subsequent calls', () => {
-      repo.prepare_active_session();
-      let cb = (err) => { expect(err.message).to.have.string('active session found'); };
-      fm_selector.allocate(valid_user, valid_conn, cb);
+      repo_impl.prepare_active_session();
+      return fm_selector
+        .allocate(valid_user, valid_conn)
+        .catch(err => { expect(err.message).to.have.string('active session found'); });
     });
   });
 });

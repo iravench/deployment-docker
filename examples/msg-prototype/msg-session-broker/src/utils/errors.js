@@ -5,3 +5,19 @@ export function ValidationError(message) {
 }
 ValidationError.prototype = Object.create(Error.prototype);
 ValidationError.prototype.constructor = ValidationError;
+
+export function RepositoryError(message) {
+  this.name = 'RepositoryError';
+  this.message = message || 'repository failed';
+  this.stack = (new Error()).stack;
+}
+RepositoryError.prototype = Object.create(Error.prototype);
+RepositoryError.prototype.constructor = RepositoryError;
+
+export function StorageError(message) {
+  this.name = 'StorageError';
+  this.message = message || 'storage failed';
+  this.stack = (new Error()).stack;
+}
+StorageError.prototype = Object.create(Error.prototype);
+StorageError.prototype.constructor = StorageError;
