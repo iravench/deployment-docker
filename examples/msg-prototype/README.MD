@@ -7,41 +7,46 @@ the messaging module prototype design and workflow draft.
 ## Session broker
 
 a load balancer should sit in front of N session-brokers, to ensure, at any given moment, there is at least one broker available;
-the load balancer should also handle front facing IP, TLS configuration and be able to balance incoming http connections evenly for each broker;
+the load balancer should also handle front facing IP, TLS configuration and be able to balance incoming http connections evenly to each broker;
 
 incoming connections should be authenticated prior to their reach of any session broker;
 
-a session-broker is stateless;
+a session-broker should be stateless;
 
-all session-brokers are backed by a single one storage;
+a session-broker is backed by msg-storage;
 
 a session-broker validates incoming connections, with user info, connection info and current policy;
-the policy could be defined as such, so that one user-device-clientIp combination is allowed to maintain only one live session;
-* if the validation succeeded, then a new session ticket is issued and returned;
-* if the client retries and succeeded, and previous ticket has not been used, then it can be returned as such;
-* if the client retries and succeeded, but previous ticket is in use, then it should invalidate the ticket and any existing session base upon that should also be dropped in favor of a new one;
-* if the validation failed, no ticket should be returned;
+the policy could be defined as such, so that one user-device-client combination is allowed to maintain only one non-closed session;
+* if the validation succeeded, then a new session ticket gets issued;
+* if the client retries, and previous ticket has not been used, then the session is reused to generate a new ticket;
+* if the client retries, but previous ticket has been used, then an error is returned. client should either continue using its current connection or close it before it can get a new one;
+* if validation failed, no ticket will be returned;
+* TBD what if Session Manager errors out leaving session state inconsistent?
 
-a session ticket may contain a token for later stage validation, a Front-Machine address to connect to, and other necessary information.
+a session ticket contains a token for later stage validation when establishing ws connection, a Front-Machine address to connect to, and maybe other necessary information.
 
-a session broker depends on a Front-Machine-Selector(FM-Selector for short) and Front-Machine-Token(FM-Token for short).
+a session broker depends on a Front-Machine-Selector(FM-Selector), Front-Machine-Token(FM-Token) and Front-Machine-Policy(FM-Policy).
 
 ### FM-Selector
-with inputs such as client ip, user id, device id, will return a Front-Machine-IP, base on current system load.
+based on client information, will create a session record and return a session ticket, base on current system load profile.
 
 ### FM-Token
-with inputs such as client ip, user id, device id, and other factors, will return a token for later authentication.
+based on client information and policy result, will return a token encapsulating all that for later authentication, this token is compute base and should not be stored on server.
+
+### FM-Policy
+based on client information, system load profile, and policy settings, will return a jsonwebtoken.
+
 
 ## Session manager
-there will be M session-managers for a M Front-Machine deployment, one manager for each front web socket machine.
+there will be N session-managers for a N Front-Machine deployment, one manager for each front web socket machine.
 
 each front ws machine exposes a public ip for clients to connect to with valid tokens.
 
-a session manager validates session requests by activating a ws session object.
+a session manager validates session requests by validating token payloads.
 
-a session manager manages ws sessions by creating/removing/passing messages among/...ws connections.
+a session manager manages ws connections and their corresponding session records.
 
-a session manager connects to a message queue, constantly pulls out messages and sends to appropriate ws connections.
+a session manager connects to a message queue, constantly pulling server side messages and sends to appropriate ws connections.
 
 a session manager depends on a Front-Machine-Authenticator(FM-Auth for short).
 
