@@ -1,4 +1,4 @@
-the messaging module prototype design and workflow draft.
+messaging module prototype design and workflow
 
 ![diagram](/examples/msg-prototype/msg-prototyping.png?raw=true "diagram")
 
@@ -42,23 +42,31 @@ there will be N session-managers for a N Front-Machine deployment, one manager f
 
 each front ws machine exposes a public ip for clients to connect to with valid tokens.
 
+each front ws machine has an associated fm id for internal clients to identify it.
+
 a session manager validates session requests by validating token payloads.
 
 a session manager manages ws connections and their corresponding session records.
 
-a session manager connects to a message queue, constantly pulling server side messages and sends to appropriate ws connections.
+a session manager accepts server side messaging requests and delivers them to appropriate ws connections.
 
-a session manager depends on a Front-Machine-Authenticator(FM-Auth for short).
+a session manager depends on a Front-Machine-Authenticator(FM-Auth).
+
+### Some other details
+a session manager init socket.io server.
+* onconnection should perform token based authentication via socket.request.params
+* a token is compute base, should not be stored on server.
+* a token also has timeout settings, and also fm id/ip embeded
+
+after a ws conn is initiated(corresponding session record gets activated)
+* socket id, fm id will be updated to session record
+
+activated session's socket id will be used to identify the ws connection for pushing server messages
+
+activated session's fm id will be used to identify server load by FM-Policy and determine fm-user mappings.
 
 ### FM-Auth
-validate token authenticity of the incoming session requests
+unpackage token payload and validate the authenticity of incoming connections requests
 
-## Process Unit
-upon server side message delivery, the process unit will try to locate a list of proper session manager message queues by querying the queue selector.
-
-the queue selector will look for signs of any live ws connection, and returns a list of session manager message queues; if no live ws connection could be found, a queue for notification is returned instead.
-
-server side messages will be queued up into those message queues.
-
-### Queue Selector
-base on session storage, look for active ws connections, and return a list of session manager message queue identifiers.(base on implementation, it could be just part of process unit's storage operation handling message distribution.)
+## Storage
+keep session records
