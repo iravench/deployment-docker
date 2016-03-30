@@ -1,7 +1,7 @@
 'use strict';
 
 export default {
-  validate: function(token) {
+  validate: function(token, user, conn, fm) {
     return true;
   }
 }
