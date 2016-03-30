@@ -8,14 +8,14 @@ const log = logger.child({widget_type: 'session_repo_factory'});
 export default function(config) {
   const { impl } = config;
   return {
-    allocate_session: function(user, conn, fm) {
+    allocate_session: function(user, conn) {
       return impl.get_none_closed_session(user, conn).then(
         (session) => {
           if (session) {
             return { session: session };
           }
           else {
-            return impl.create_new_session(user, conn, fm).then(
+            return impl.create_new_session(user, conn).then(
               (new_session) => {
                 // override 'inactive' to 'new' from application level
                 // to indicate that this session is in fact newly created

@@ -11,12 +11,10 @@ let flag_to_fail = false;
 
 const valid_user = { user_id: 'user_id', device_id: 'device_id' };
 const valid_conn = { ip: '192.168.1.111' };
-const fm = { ip: '111.111.111.111' };
 
 export default {
   valid_user: valid_user,
   valid_conn: valid_conn,
-  fm: fm,
   reset: function() {
     store = { sessions: [] };
     flag_to_fail = false;
@@ -26,19 +24,19 @@ export default {
   },
   prepare_inactive_session: function() {
     store.sessions.push({
+      id: 1,
       user_id: valid_user.user_id,
       device_id: valid_user.device_id,
       ip: valid_conn.ip,
-      fm_ip: fm.ip,
       status: 'inactive'
     });
   },
   prepare_active_session: function() {
     store.sessions.push({
+      id: 1,
       user_id: valid_user.user_id,
       device_id: valid_user.device_id,
       ip: valid_conn.ip,
-      fm_ip: fm.ip,
       status: 'active'
     });
   },
@@ -68,17 +66,17 @@ export default {
       }
     });
   },
-  create_new_session: function(user, conn, fm) {
+  create_new_session: function(user, conn) {
     return new Promise((resolve, reject) => {
       try
       {
         if (flag_to_fail) throw new Error('intended db failed');
 
         const new_session = {
+          id: 1,
           user_id: user.user_id,
           device_id: user.device_id,
           ip: conn.ip,
-          fm_ip: fm.ip,
           status: 'inactive'
         };
         store.sessions.push(new_session);
