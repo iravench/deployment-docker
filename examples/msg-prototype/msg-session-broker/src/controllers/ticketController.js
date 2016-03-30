@@ -11,17 +11,18 @@ export default {
     router.post('/tickets', (req, res) => {
       log.info(req, 'new ticket requested');
 
-      // user and conn should be extracted from request
+      // TBD user and conn should be extracted from request
+      // TBD validation should be extracted from fm_selector since it's the controller's job
       req.app.locals.fm_selector.allocate(repo_impl.valid_user, repo_impl.valid_conn).then(
         (ticket) => {
           log.info(res, 'new ticket created');
           res.json(ticket);
         },
         (err) => {
+          //TBD might want to extract this into a middleware
           let status = 500;
           if (err instanceof ValidationError) status = 400;
           res.status(status);
-          // might want to extract this bit
           res.json({status: { code: status, message: err.message }});
         });
     });
