@@ -2,12 +2,14 @@
 
 import { expect } from 'chai';
 import repo_impl from './fixture/repo_impl';
-import fm_token from '../src/fm_token';
-import fm_policy from '../src/fm_policy';
 import repo_factory from '../src/repo_factory';
+import fm_token from '../src/fm_token';
+import fm_policy_impl from './fixture/fm_policy_impl';
+import fm_policy_factory from '../src/fm_policy_factory';
 import fm_selector_factory from '../src/fm_selector_factory';
 
 const repo = repo_factory({ impl: repo_impl });
+const fm_policy = fm_policy_factory({ impl: fm_policy_impl });
 const fm_selector = fm_selector_factory({ repo: repo, policy: fm_policy, token: fm_token });
 
 describe('fm_selector', () => {

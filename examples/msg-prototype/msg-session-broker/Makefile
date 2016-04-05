@@ -1,4 +1,5 @@
-PROJECT           ?= iravench/msg-session-broker
+SUB_NAME          ?= broker
+PROJECT           ?= iravench/msg-session-$(SUB_NAME)
 TAG               ?= latest
 
 ifdef REGISTRY
@@ -16,6 +17,10 @@ clean:
 	docker images | grep "$(PROJECT)" | grep "$(TAG)" | awk '{print $$3}' | (read id; if [ "$$id" != "" ]; then docker rmi $$id; exit 0; fi)
 build: Dockerfile clean
 	docker build -t $(IMAGE) .
+run:
+	docker run -d -i -t -p 8080:8080 --name $(SUB_NAME) $(PROJECT) nodemon
+remove:
+	docker rm -f $(SUB_NAME)
 registry: build
 	REGISTRY_ADDR = $(shell docker-machine ip infra):5000
 	PRIVATE_IMAGE = $(REGISTRY_ADDR)/$(shell basename $(IMAGE))

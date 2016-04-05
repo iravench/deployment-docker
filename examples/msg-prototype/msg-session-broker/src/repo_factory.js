@@ -3,7 +3,7 @@
 import logger from './utils/logger'
 import { RepositoryError } from './utils/errors'
 
-const log = logger.child({widget_type: 'session_repo_factory'});
+const log = logger.child({widget_type: 'repo_factory'});
 
 export default function(config) {
   const { impl } = config;

@@ -4,7 +4,7 @@ import _ from 'lodash';
 import logger from '../../src/utils/logger'
 import { StorageError } from '../../src/utils/errors'
 
-const log = logger.child({widget_type: 'session_repo_impl'});
+const log = logger.child({widget_type: 'repo_impl'});
 
 let store = { sessions: [] };
 let flag_to_fail = false;
