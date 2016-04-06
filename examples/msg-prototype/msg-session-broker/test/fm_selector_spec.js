@@ -1,25 +1,14 @@
 'use strict';
 
+import sinon from 'sinon';
 import { expect } from 'chai';
-import repo_impl from './fixture/repo_impl';
-import repo_factory from '../src/repo_factory';
-import fm_token from '../src/fm_token';
-import fm_policy_impl from './fixture/fm_policy_impl';
-import fm_policy_factory from '../src/fm_policy_factory';
-import fm_selector_factory from '../src/fm_selector_factory';
 
-const repo = repo_factory({ impl: repo_impl });
-const fm_policy = fm_policy_factory({ impl: fm_policy_impl });
-const fm_selector = fm_selector_factory({ repo: repo, policy: fm_policy, token: fm_token });
+import fm_selector_factory from '../src/fm_selector_factory';
+import fixture from './fixture/fm_selector.js';
 
 describe('fm_selector', () => {
-  const valid_user = repo_impl.valid_user;
-  const valid_conn = repo_impl.valid_conn;
-
   describe('#allocate validation', () => {
-    beforeEach(() => {
-      repo_impl.reset();
-    });
+    const fm_selector = fm_selector_factory({repo: {}, policy: {}, token: {}});
 
     it('response to allocate', () => {
       expect(fm_selector).to.respondTo('allocate');
@@ -47,53 +36,77 @@ describe('fm_selector', () => {
 
     it('invalidate empty connection', () => {
       return fm_selector
-        .allocate(valid_user, null)
+        .allocate(fixture.valid_user, null)
         .catch(err => { expect(err.message).to.have.string('bad connection'); });
     });
 
     it('invalidate connection without ip', () => {
       let invalid_conn = {};
       return fm_selector
-        .allocate(valid_user, invalid_conn)
+        .allocate(fixture.valid_user, invalid_conn)
         .catch(err => { expect(err.message).to.have.string('bad connection ip'); });
     });
   });
 
   describe('#allocate ticket', () => {
-    beforeEach(() => {
-      repo_impl.reset();
-    });
+    const failed_repo = { allocate_session: () => {} };
+    sinon.stub(failed_repo, 'allocate_session').returns(Promise.reject());
+
+    const new_repo = { allocate_session: () => {} };
+    sinon.stub(new_repo, 'allocate_session')
+      .returns(Promise.resolve({ session: { session_id: 1, status: "new"} }));
+
+    const inactive_repo = { allocate_session: () => {} };
+    sinon.stub(inactive_repo, 'allocate_session')
+      .returns(Promise.resolve({ session: { session_id: 1, status: "inactive"} }));
+
+    const active_repo = { allocate_session: () => {} };
+    sinon.stub(active_repo, 'allocate_session')
+      .returns(Promise.resolve({ session: { session_id: 1, status: "active"} }));
+
+    const policy = { get_fm: () => {} };
+    sinon.stub(policy, 'get_fm').returns(fixture.result_fm);
+
+    const token = { generate: () => {} };
+    sinon.stub(token, 'generate').returns(fixture.result_token);
 
     it('error out in case of repository failure', () => {
-      repo_impl.mimic_db_failure();
+      const fm_selector = fm_selector_factory({repo: failed_repo, policy: {}, token: {}});
+
       return fm_selector
-        .allocate(valid_user, valid_conn)
+        .allocate(fixture.valid_user, fixture.valid_conn)
         .catch(err => { expect(err.message).to.have.string('fail on accessing session state'); });
     });
 
     it('one session per one user/device/ip combo', () => {
+      const fm_selector = fm_selector_factory({repo: new_repo, policy: policy, token: token });
+
       return fm_selector
-        .allocate(valid_user, valid_conn)
+        .allocate(fixture.valid_user, fixture.valid_conn)
         .then(result => {
           expect(result).to.exist;
+          expect(result.fm_ip).to.exist;
           expect(result.token).to.exist;
         });
     });
 
     it('inactive session gets resued', () => {
-      repo_impl.prepare_inactive_session();
+      const fm_selector = fm_selector_factory({repo: inactive_repo, policy: policy, token: token });
+
       return fm_selector
-        .allocate(valid_user, valid_conn)
+        .allocate(fixture.valid_user, fixture.valid_conn)
         .then(result => {
           expect(result).to.exist;
+          expect(result.fm_ip).to.exist;
           expect(result.token).to.exist;
         });
     });
 
     it('active session fails subsequent requests', () => {
-      repo_impl.prepare_active_session();
+      const fm_selector = fm_selector_factory({repo: active_repo, policy: policy, token: token });
+
       return fm_selector
-        .allocate(valid_user, valid_conn)
+        .allocate(fixture.valid_user, fixture.valid_conn)
         .catch(err => { expect(err.message).to.have.string('active session found'); });
     });
   });
