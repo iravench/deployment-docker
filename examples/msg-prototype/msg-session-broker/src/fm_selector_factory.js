@@ -11,8 +11,10 @@ export default function(config) {
   function get_ticket(user, conn, session) {
     const fm = policy.get_fm({ user: user, conn: conn });
     const payload = { fm: fm, user: user, conn: conn, session_id: session.id };
-    const a_token = token.generate(payload);
-    return { fm_ip: fm.ip, token: a_token };
+    return token.generate(payload).then((token) => {
+      log.trace('ticket returned');
+      return { fm_ip: fm.ip, token: token };
+    });
   }
 
   return {
@@ -42,21 +44,19 @@ export default function(config) {
               throw new Error(err_msg);
             }
 
-            let ticket = get_ticket(user, conn, result.session);
-            log.trace('ticket returned');
-            return ticket;
+            return get_ticket(user, conn, result.session);
           },
           (err) => {
             let err_msg = 'fail on accessing session state';
             log.trace(err, err_msg);
             throw new Error(err_msg);
           }).then(
-          (ticket) => {
-            resolve(ticket);
-          },
-          (err) => {
-            reject(err);
-          });
+            (ticket) => {
+              resolve(ticket);
+            },
+            (err) => {
+              reject(err);
+            });
       });
     }
   };

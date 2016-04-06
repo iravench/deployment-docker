@@ -68,7 +68,7 @@ describe('fm_selector', () => {
     sinon.stub(policy, 'get_fm').returns(fixture.result_fm);
 
     const token = { generate: () => {} };
-    sinon.stub(token, 'generate').returns(fixture.result_token);
+    sinon.stub(token, 'generate').returns(Promise.resolve(fixture.result_token));
 
     it('error out in case of repository failure', () => {
       const fm_selector = fm_selector_factory({repo: failed_repo, policy: {}, token: {}});
@@ -85,8 +85,8 @@ describe('fm_selector', () => {
         .allocate(fixture.valid_user, fixture.valid_conn)
         .then(result => {
           expect(result).to.exist;
-          expect(result.fm_ip).to.exist;
-          expect(result.token).to.exist;
+          expect(result.fm_ip).to.equal(fixture.result_fm.ip);
+          expect(result.token).to.equal(fixture.result_token);
         });
     });
 
@@ -97,8 +97,8 @@ describe('fm_selector', () => {
         .allocate(fixture.valid_user, fixture.valid_conn)
         .then(result => {
           expect(result).to.exist;
-          expect(result.fm_ip).to.exist;
-          expect(result.token).to.exist;
+          expect(result.fm_ip).to.equal(fixture.result_fm.ip);
+          expect(result.token).to.equal(fixture.result_token);
         });
     });
 
