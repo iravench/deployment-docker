@@ -50,7 +50,7 @@ describe('fm_selector', () => {
 
   describe('#allocate ticket', () => {
     const failed_repo = { allocate_session: () => {} };
-    sinon.stub(failed_repo, 'allocate_session').returns(Promise.reject());
+    sinon.stub(failed_repo, 'allocate_session').returns(Promise.reject(new Error('db error')));
 
     const new_repo = { allocate_session: () => {} };
     sinon.stub(new_repo, 'allocate_session')
@@ -67,19 +67,30 @@ describe('fm_selector', () => {
     const policy = { get_fm: () => {} };
     sinon.stub(policy, 'get_fm').returns(Promise.resolve(fixture.result_fm));
 
+    const bad_policy = { get_fm: () => {} };
+    sinon.stub(bad_policy, 'get_fm').returns(Promise.reject(new Error('no connection available')));
+
     const token = { generate: () => {} };
     sinon.stub(token, 'generate').returns(Promise.resolve(fixture.result_token));
 
     it('error out in case of repository failure', () => {
-      const fm_selector = fm_selector_factory({repo: failed_repo, policy: {}, token: {}});
+      const fm_selector = fm_selector_factory({ repo: failed_repo, policy: {}, token: {} });
 
       return fm_selector
         .allocate(fixture.valid_user, fixture.valid_conn)
         .catch(err => { expect(err.message).to.have.string('fail on accessing session state'); });
     });
 
+    it('error out in case of policy failure', () => {
+      const fm_selector = fm_selector_factory({ repo: new_repo, policy: bad_policy, token: token });
+
+      return fm_selector
+        .allocate(fixture.valid_user, fixture.valid_conn)
+        .catch(err => { expect(err.message).to.have.string('fail on obtaining front machine connection'); });
+    });
+
     it('one session per one user/device/ip combo', () => {
-      const fm_selector = fm_selector_factory({repo: new_repo, policy: policy, token: token });
+      const fm_selector = fm_selector_factory({ repo: new_repo, policy: policy, token: token });
 
       return fm_selector
         .allocate(fixture.valid_user, fixture.valid_conn)
@@ -91,7 +102,7 @@ describe('fm_selector', () => {
     });
 
     it('inactive session gets resued', () => {
-      const fm_selector = fm_selector_factory({repo: inactive_repo, policy: policy, token: token });
+      const fm_selector = fm_selector_factory({ repo: inactive_repo, policy: policy, token: token });
 
       return fm_selector
         .allocate(fixture.valid_user, fixture.valid_conn)
@@ -103,7 +114,7 @@ describe('fm_selector', () => {
     });
 
     it('active session fails subsequent requests', () => {
-      const fm_selector = fm_selector_factory({repo: active_repo, policy: policy, token: token });
+      const fm_selector = fm_selector_factory({ repo: active_repo, policy: policy, token: token });
 
       return fm_selector
         .allocate(fixture.valid_user, fixture.valid_conn)

@@ -12,13 +12,14 @@ export default function(config) {
     return policy.get_fm(user, conn).then(
       (fm) => {
         const payload = { fm: fm, user: user, conn: conn, session_id: session.id };
-        return token.generate(payload).then((token) => {
-          return { fm_ip: fm.ip, token: token };
+        return token.generate(payload).then(
+          (token) => {
+            return { fm_ip: fm.ip, token: token };
+          });
       },
       (err) => {
-        handleError('fail on obtaining fm', err);
+        handleError('fail on obtaining front machine connection', err);
       });
-    });
   }
 
   function handleError(err_msg, lowerLvlErr) {
