@@ -65,7 +65,7 @@ describe('fm_selector', () => {
       .returns(Promise.resolve({ session: { session_id: 1, status: "active"} }));
 
     const policy = { get_fm: () => {} };
-    sinon.stub(policy, 'get_fm').returns(fixture.result_fm);
+    sinon.stub(policy, 'get_fm').returns(Promise.resolve(fixture.result_fm));
 
     const token = { generate: () => {} };
     sinon.stub(token, 'generate').returns(Promise.resolve(fixture.result_token));

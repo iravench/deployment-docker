@@ -9,10 +9,15 @@ export default function(config) {
   const { repo, policy, token } = config;
 
   function get_ticket(user, conn, session) {
-    const fm = policy.get_fm({ user: user, conn: conn });
-    const payload = { fm: fm, user: user, conn: conn, session_id: session.id };
-    return token.generate(payload).then((token) => {
-      return { fm_ip: fm.ip, token: token };
+    return policy.get_fm(user, conn).then(
+      (fm) => {
+        const payload = { fm: fm, user: user, conn: conn, session_id: session.id };
+        return token.generate(payload).then((token) => {
+          return { fm_ip: fm.ip, token: token };
+      },
+      (err) => {
+        handleError('fail on obtaining fm', err);
+      });
     });
   }
 
@@ -60,11 +65,11 @@ export default function(config) {
           }).then(
             (ticket) => {
               log.trace('session allocated');
-              resolve(ticket);
+              return resolve(ticket);
             },
             (err) => {
               log.trace('session allocation error');
-              reject(err);
+              return reject(err);
             });
       });
     }

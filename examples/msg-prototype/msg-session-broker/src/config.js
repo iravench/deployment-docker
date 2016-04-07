@@ -12,5 +12,7 @@ export default {
     subject: "fm auth",
     issuer: "bex messaging"
   },
+  policy: {
+  },
   port: 8080
 };
