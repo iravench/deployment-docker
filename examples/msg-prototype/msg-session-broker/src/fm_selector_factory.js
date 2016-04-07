@@ -12,21 +12,33 @@ export default function(config) {
     const fm = policy.get_fm({ user: user, conn: conn });
     const payload = { fm: fm, user: user, conn: conn, session_id: session.id };
     return token.generate(payload).then((token) => {
-      log.trace('ticket returned');
       return { fm_ip: fm.ip, token: token };
     });
+  }
+
+  function handleError(err_msg, lowerLvlErr) {
+    if (lowerLvlErr) {
+      log.trace(lowerLvlErr, err_msg);
+    } else {
+      log.trace(err_msg);
+    }
+    throw new Error(err_msg);
+  }
+
+  function handleValidation(user, conn) {
+    if (!user) throw new ValidationError('bad user');
+    if (!user.user_id) throw new ValidationError('bad user id');
+    if (!user.device_id) throw new ValidationError('bad device id');
+
+    if (!conn) throw new ValidationError('bad connection');
+    if (!conn.ip) throw new ValidationError('bad connection ip');
   }
 
   return {
     allocate: function(user, conn) {
       return new Promise((resolve, reject) => {
 
-        if (!user) return reject(new ValidationError('bad user'));
-        if (!user.user_id) return reject(new ValidationError('bad user id'));
-        if (!user.device_id) return reject(new ValidationError('bad device id'));
-
-        if (!conn) return reject(new ValidationError('bad connection'));
-        if (!conn.ip) return reject(new ValidationError('bad connection ip'));
+        handleValidation(user, conn);
 
         return repo.allocate_session(user, conn).then(
           (result) => {
@@ -35,26 +47,23 @@ export default function(config) {
             } else if (result.session.status == 'inactive') {
               log.trace('inactive session found');
             } else if (result.session.status == 'active') {
-              let err_msg = 'active session found';
-              log.trace(err_msg);
-              throw new Error(err_msg);
+              handleError('active session found');
             } else {
-              let err_msg = 'unknown state';
-              log.trace(err_msg);
-              throw new Error(err_msg);
+              handleError('unknown state');
             }
 
             return get_ticket(user, conn, result.session);
           },
           (err) => {
-            let err_msg = 'fail on accessing session state';
-            log.trace(err, err_msg);
-            throw new Error(err_msg);
+            // handle errors from repository which are of lower abstraction level
+            handleError('fail on accessing session state', err);
           }).then(
             (ticket) => {
+              log.trace('session allocated');
               resolve(ticket);
             },
             (err) => {
+              log.trace('session allocation error');
               reject(err);
             });
       });
