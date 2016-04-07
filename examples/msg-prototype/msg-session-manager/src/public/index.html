@@ -1,0 +1,27 @@
+<script src="/socket.io/socket.io.js"></script>
+<script>
+  // grab token and front machine ip from msg-session-broker
+  var fm_ip = 'localhost';
+  var token = 'bad token';
+
+  var socket = io.connect('http://' + fm_ip + ':9090');
+  socket
+  .on('connect', function () {
+    console.log('connected');
+    socket
+    .on('authenticated', function () {
+      socket.on('news', function (data) {
+        console.log(data);
+        socket.emit('my other event', { my: 'data' });
+      })
+    })
+    .on('unauthorized', function (error) {
+      console.log(error);
+    })
+    .emit('authenticate', { token: token });
+  })
+  .on('error', function (err) {
+    if (err.type == "UnauthorizedError" || err.code == "invalid_token")
+      console.log("User's token has expired");
+  });
+</script>

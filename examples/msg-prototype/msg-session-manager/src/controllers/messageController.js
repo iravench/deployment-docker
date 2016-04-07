@@ -10,7 +10,7 @@ export default {
     router.post('/messages', (req, res) => {
       log.info('batch message delivery requested');
 
-      req.app.locals.fm_manager.sendMessages(
+      req.app.locals.messaging.batch(
         [{socket: 'id', messages: []}]
       ).then(
         (result) => {
