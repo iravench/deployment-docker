@@ -25,18 +25,14 @@ describe('fm_token', () => {
   });
 
   describe('#generate token', () => {
-    it('generate a valid jwt token', (done) => {
-      const fm_token = fm_token_factory();
+    it('generate a valid token', () => {
+      const impl = { sign: () => {} };
+      sinon.stub(impl, 'sign').returns(Promise.resolve(fixture.token));
+      const fm_token = fm_token_factory({ impl: impl });
       return fm_token
         .generate(fixture.payload)
         .then(result => {
-          expect(result).to.exist;
-
-          jwt.verify(result, config.jwt.secret, config.jwt, (error, payload) => {
-            expect(payload).to.exist;
-            expect(payload.session_id).to.equal(fixture.payload.session_id);
-            done();
-          });
+          expect(result).to.equal(fixture.token);
         });
     });
   });
