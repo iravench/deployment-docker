@@ -1,0 +1,41 @@
+<script src="/socket.io-1.4.5.js"></script>
+<script src="/jquery-2.2.3.min.js"></script>
+<script>
+  // grab token and front machine ip from msg-session-broker
+  $.ajax({
+    type: "POST",
+    url: "http://localhost:8080/v1/tickets", // points to msg-session-broker
+    data: {
+      user: { user_id: "pink", device_id: "iphone-xxxxx-xxxx-xxxx" },
+      conn: { ip: "123.123.123.123" } // where this user is connecting from
+    },
+    dataType: "json",
+    success: function(data) {
+      var fm_ip = data.fm_ip;
+      var token = data.token;
+
+      setupSocketIo(fm_ip, token);
+    }
+  });
+
+  function setupSocketIo(fm_ip, token) {
+    // the port should also be coming in from token
+    var socket = io.connect('http://' + fm_ip + ':9090');
+    socket
+    .on('connect', function () {
+      socket
+      .on('authenticated', function () {
+        // stuff you want to do when the socket is authenticated
+        socket.on('hello', function (data) {
+          console.log(data);
+          socket.emit('howdy', { data: "I am fine." });
+        });
+      })
+      .on('unauthorized', function (error) {
+        // stuff you want to do when not authenticated, like token expiry, invalid, etc.
+        console.log('unauthorized', error);
+      })
+      .emit('authenticate', { token: token });
+    });
+  }
+</script>

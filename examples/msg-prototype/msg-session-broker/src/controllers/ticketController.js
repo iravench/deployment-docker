@@ -10,9 +10,9 @@ export default {
     router.post('/tickets', (req, res) => {
       log.info('new ticket requested');
 
-      // TBD user and conn should be extracted from request
-      const valid_user = { user_id: 'user_id', device_id: 'device_id' };
-      const valid_conn = { ip: '192.168.1.111' };
+      // TBD user and conn should be extracted from request and validated
+      const valid_user = req.body.user;
+      const valid_conn = req.body.conn;
 
       // TBD validation should be extracted out of fm_selector since it's the controller's job
       req.app.locals.fm_selector.allocate(valid_user, valid_conn).then(

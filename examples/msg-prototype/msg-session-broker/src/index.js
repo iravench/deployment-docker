@@ -23,7 +23,18 @@ const app = express();
 app.locals.fm_selector = fm_selector;
 const apiRouter = express.Router();
 controllers.init(apiRouter);
-app.use('/v1', bodyParser.json(), bodyParser.urlencoded({ extended:false }), apiRouter);
+app.use('/v1', bodyParser.json(), bodyParser.urlencoded({ extended:true }), apiRouter);
+
+//TBD index page for socket client, these should be hosted on some other application
+app.get('/', function (req, res) {
+  res.sendFile(__dirname + '/public/index.html');
+});
+app.get('/jquery-2.2.3.min.js', function (req, res) {
+  res.sendFile(__dirname + '/public/jquery-2.2.3.min.js');
+});
+app.get('/socket.io-1.4.5.js', function (req, res) {
+  res.sendFile(__dirname + '/public/socket.io-1.4.5.js');
+});
 
 app.listen(config.port);
 log.info('start listening on port %s', config.port);
