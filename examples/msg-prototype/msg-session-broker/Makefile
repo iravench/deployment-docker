@@ -18,6 +18,7 @@ all:
 clean:
 	docker images | grep "$(PROJECT)" | grep "$(TAG)" | awk '{print $$3}' | (read id; if [ "$$id" != "" ]; then docker rmi $$id; exit 0; fi)
 build: Dockerfile clean
+	npm run compile
 	docker build -t $(IMAGE) .
 run:
 	docker run -d -i -t -p 8080:8080 --name $(SHORT_NAME) $(PROJECT) nodemon

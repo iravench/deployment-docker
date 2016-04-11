@@ -7,7 +7,8 @@
     "start": "nodemon --exec babel-node -- src/index.js | bunyan",
     "test": "mocha --compilers js:babel-core/register --require ./test/test_init.js --recursive ./test",
     "test:watch": "npm run test -- --watch",
-    "compile": "rm -rf lib/ && babel -d lib/ src/ && mkdir lib/public/ && cp src/public/* lib/public/"
+    "compile": "rm -rf lib/ && babel -d lib/ src/ && rm -rf lib/public && mkdir lib/public/ && cp src/public/* lib/public/",
+    "createdb": "babel-node ./maintenance/initdb.js"
   },
   "author": "Raven Chen",
   "license": "MIT",
@@ -21,8 +22,10 @@
     "bunyan": "^1.5.1",
     "express": "^4.13.3",
     "immutable": "^3.7.5",
+    "ioredis": "^1.15.1",
     "jsonwebtoken": "^5.7.0",
-    "lodash": "^3.10.1"
+    "lodash": "^3.10.1",
+    "mysql": "^2.10.2"
   },
   "devDependencies": {
     "babel-core": "^6.3.15",

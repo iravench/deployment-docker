@@ -53,6 +53,10 @@ export default function(config) {
             } else if (result.session.status == 'inactive') {
               log.trace('inactive session found');
             } else if (result.session.status == 'active') {
+              //TBD is best to signal manager to close current active session and return a new one.
+              //this can be achieved async, here we only make a close request
+              //then close the old session and create a new session
+              //manager can pick up the close request later
               handleError('active session found');
             } else {
               handleError('unknown state');

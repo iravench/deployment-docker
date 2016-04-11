@@ -14,6 +14,22 @@ export default {
     issuer: "bex msg",       // issuer of the token
     headers: { role: 'dir' } // custom information
   },
+  storage: {
+    redis: {
+      ip: "192.168.99.100",
+      port: 6379,
+      family: 4,
+      password: "pink5678",
+      db: 0
+    },
+    mysql: {
+      host: "192.168.99.100",
+      port: 3306,
+      database: "bex-msg",
+      user: "pink",
+      password: "5678"
+    }
+  },
   policy: {
   },
   port: 8080
