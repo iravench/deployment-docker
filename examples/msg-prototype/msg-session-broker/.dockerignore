@@ -1,4 +1,5 @@
 node_modules
+maintenance
 .DS_Store
 .eslintrc
 .git/

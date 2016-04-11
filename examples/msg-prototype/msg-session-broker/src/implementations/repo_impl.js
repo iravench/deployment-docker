@@ -6,7 +6,7 @@ import logger from '../utils/logger'
 import { StorageError } from '../utils/errors'
 
 const log = logger.child({widget_type: 'repo_impl'});
-//TBD should probably inject a pool instance here.
+//TBD should probably inject a pool instance here so that we can do unit testing...
 const pool = mysql.createPool(config.storage.mysql);
 
 // how can we store this data in redis?
