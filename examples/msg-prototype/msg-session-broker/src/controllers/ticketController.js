@@ -11,8 +11,9 @@ export default {
       log.info('new ticket requested');
 
       // TBD user and conn should be extracted from request and validated
+      const client_ip = req.ip == '::1' ? '127.0.0.1' : req.ip;
       const valid_user = req.body.user;
-      const valid_conn = req.body.conn;
+      const valid_conn = { ip: client_ip };
 
       // TBD validation should be extracted out of fm_selector since it's the controller's job
       req.app.locals.fm_selector.allocate(valid_user, valid_conn).then(
