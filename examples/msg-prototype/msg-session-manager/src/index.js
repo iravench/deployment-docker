@@ -4,7 +4,7 @@ import http from 'http'
 import express from 'express'
 import bodyParser from 'body-parser'
 import socketio from 'socket.io'
-import socketioJwt from 'socketio-jwt'
+import socketioJwt from './vendor/socketio-jwt'
 import config from './config'
 import logger from './utils/logger'
 import controllers from './controllers'
@@ -20,7 +20,17 @@ app.use('/v1', bodyParser.json(), bodyParser.urlencoded({ extended:false }), api
 // init socket.io
 const server = http.Server(app);
 const io = socketio(server);
-io.on('connection', socketioJwt.authorize(config.jwt));
+const authOpts = Object.assign({}, config.jwt, { additional_auth: (socket, decodedToken, onSuccess, onError) => {
+  //TBD might want further compare socket client info with decoded token
+  //to ensure this is in fact the client sending the token he properly obtained
+  if (!socket.handshake.address.includes(decodedToken.conn.ip))
+    onError({ message: 'client ip not match with token' }, 'invalid_token');
+
+  // activate session base on decoded token
+  // fail to activate session will cause connection to be unauthorized, such as session already been activated.
+  onSuccess();
+}});
+io.on('connection', socketioJwt.authorize(authOpts));
 io.on('authenticated', (socket) => {
   // just show the token for fun
   console.log('decoded token from client', socket.decoded_token);
