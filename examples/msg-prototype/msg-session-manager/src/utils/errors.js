@@ -21,3 +21,11 @@ export function StorageError(message) {
 }
 StorageError.prototype = Object.create(Error.prototype);
 StorageError.prototype.constructor = StorageError;
+
+export function SessionAlreadyActivatedError(message) {
+  this.name = 'SessionAlreadyActivatedError';
+  this.message = message || 'session has already been activated';
+  this.stack = (new Error()).stack;
+}
+SessionAlreadyActivatedError.prototype = Object.create(Error.prototype);
+SessionAlreadyActivatedError.prototype.constructor = SessionAlreadyActivatedError;

@@ -14,5 +14,21 @@ export default {
     headers: { role: 'dir' },// custom information
     timeout: 3000            // timespan in seconds btw socket connect and authenticate, timeout cause disconnect
   },
+  storage: {
+    redis: {
+      ip: "192.168.99.100",
+      port: 6379,
+      family: 4,
+      password: "pink5678",
+      db: 0
+    },
+    mysql: {
+      host: "192.168.99.100",
+      port: 3306,
+      database: "bex-msg",
+      user: "pink",
+      password: "5678"
+    }
+  },
   port: 9090
 };

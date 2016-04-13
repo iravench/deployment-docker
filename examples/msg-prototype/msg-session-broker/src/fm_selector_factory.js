@@ -22,9 +22,9 @@ export default function(config) {
       });
   }
 
-  function handleError(err_msg, lowerLvlErr) {
-    if (lowerLvlErr) {
-      log.trace(lowerLvlErr, err_msg);
+  function handleError(err_msg, err) {
+    if (err) {
+      log.trace(err, err_msg);
     } else {
       log.trace(err_msg);
     }

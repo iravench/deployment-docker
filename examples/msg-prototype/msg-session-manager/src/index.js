@@ -8,6 +8,10 @@ import socketioJwt from './vendor/socketio-jwt'
 import config from './config'
 import logger from './utils/logger'
 import controllers from './controllers'
+import repo_impl from './implementations/repo_impl';
+import repo_factory from './repo_factory';
+import fm_selector_factory from './fm_selector_factory';
+import { SessionAlreadyActivatedError } from './utils/errors'
 
 const log = logger.child({widget_type: 'main'});
 
@@ -20,24 +24,28 @@ app.use('/v1', bodyParser.json(), bodyParser.urlencoded({ extended:false }), api
 // init socket.io
 const server = http.Server(app);
 const io = socketio(server);
+const repo = repo_factory({ impl: repo_impl });
+const fm_selector = fm_selector_factory({ repo: repo });
 const authOpts = Object.assign({}, config.jwt, { additional_auth: (socket, decodedToken, onSuccess, onError) => {
   //TBD might want further compare socket client info with decoded token
   //to ensure this is in fact the client sending the token he properly obtained
   if (!socket.handshake.address.includes(decodedToken.conn.ip))
     onError({ message: 'client ip not match with token' }, 'invalid_token');
 
-  // activate session base on decoded token
-  // fail to activate session will cause connection to be unauthorized, such as session already been activated.
-  onSuccess();
+  // activate session base on the decoded token
+  fm_selector.activate(decodedToken, socket.id).then((result) => {
+    onSuccess();
+  },
+  (err) => {
+    console.log(err);
+    if (err instanceof SessionAlreadyActivatedError)
+      onError({ message: 'session has already been activated' }, 'invalid_token');
+    else
+      onError({ message: 'unknown error, please retry' });
+  });
 }});
 io.on('connection', socketioJwt.authorize(authOpts));
 io.on('authenticated', (socket) => {
-  // just show the token for fun
-  console.log('decoded token from client', socket.decoded_token);
-  // activate session
-  console.log('about to activate session', socket.decoded_token.session_id);
-  // TBD what if activation failed? might end up writing a custom socketio-jwt lib
-
   // what you want to do with a secured socket
   socket.emit('hello', { data: "how are you?" });
   socket.on('howdy', function (data) {
