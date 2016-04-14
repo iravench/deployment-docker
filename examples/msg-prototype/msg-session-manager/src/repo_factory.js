@@ -5,6 +5,12 @@ import { RepositoryError } from './utils/errors'
 
 const log = logger.child({widget_type: 'repo_factory'});
 
+function handleStorageError(err) {
+  let err_msg = 'error accessing session repository';
+  log.trace(err, err_msg);
+  throw new RepositoryError(err_msg);
+}
+
 export default function(config) {
   const { impl } = config;
   return {
@@ -12,25 +18,26 @@ export default function(config) {
       return impl.get_inactive_session(session_id).then(
         (result) => {
           if (!result) {
-            return { status: 'not found' };
+            return { status: 'NotFound' };
           }
           else {
             return impl.activate_session(session_id, fm_id, socket_id).then(
-              (result) => {
-                return { status: 'activated' };
+              () => {
+                return { status: 'Activated' };
               },
               (err) => {
-                let err_msg = 'error accessing session storage';
-                log.trace(err, err_msg);
-                throw new RepositoryError(err_msg);
+                handleStorageError(err);
               });
           }
         },
         (err) => {
-          let err_msg = 'error accessing session storage';
-          log.trace(err, err_msg);
-          throw new RepositoryError(err_msg);
+          handleStorageError(err);
         });
+    },
+    close_session: function(socket_id) {
+      return impl.close_session(socket_id).catch((err) => {
+        handleStorageError(err);
+      });
     }
   };
 }

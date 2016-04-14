@@ -10,8 +10,8 @@ const log = logger.child({widget_type: 'repo_impl'});
 const pool = mysql.createPool(config.storage.mysql);
 
 const selectInactiveSessionQuery = 'select id from session where id=? and status="inactive"';
-
 const activateSessionQuery = 'update session set status="active", fm_id=?, socket_id=? where id=?';
+const closeSessionQuery = 'update session set status="closed" where socket_id=?';
 
 export default {
   get_inactive_session(session_id) {
@@ -58,6 +58,28 @@ export default {
           }
 
           resolve({ id: session_id });
+          connection.release();
+        });
+      });
+    });
+  },
+  close_session: function(socket_id) {
+    return new Promise((resolve, reject) => {
+      pool.getConnection((err, connection) => {
+        if (err) {
+          let err_msg = 'error connecting mysql';
+          log.trace(err, err_msg);
+          return reject(new StorageError(err_msg));
+        }
+
+        connection.query(closeSessionQuery, [socket_id], (err, result) => {
+          if (err) {
+            let err_msg = 'error closing mysql session';
+            log.trace(err, err_msg);
+            return reject(new StorageError(err_msg));
+          }
+
+          resolve();
           connection.release();
         });
       });
