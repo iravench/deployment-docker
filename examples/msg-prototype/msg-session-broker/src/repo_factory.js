@@ -30,7 +30,22 @@ export default function(config) {
           }
         },
         (err) => {
-          let err_msg = 'fail on accessing session storage';
+          let err_msg = 'error accessing session storage';
+          log.trace(err, err_msg);
+          throw new RepositoryError(err_msg);
+        });
+    },
+    get_registered_fms: function() {
+      return impl.get_fm_registrations().then(
+        (result) => {
+          if (!result || result.length <= 0) {
+            return;
+          } else {
+            return result;
+          }
+        },
+        (err) => {
+          let err_msg = 'error accessing fm registration storage';
           log.trace(err, err_msg);
           throw new RepositoryError(err_msg);
         });

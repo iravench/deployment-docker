@@ -13,16 +13,29 @@ const log = logger.child({widget_type: 'fm_policy_factory'});
 export default function(options) {
   const defaults = config.policy;
   const opts = Object.assign({}, defaults, options)
-  const { impl } = opts;
+  const { repo } = opts;
 
   return {
-    // get available front machine info
+    // get available front machines
+    // check known servers' current load
+    // opts might contain other flags or user/conn info, for maybe blacklist
+    //
     get_fm: function(user, conn) {
-      return new Promise((resolve, reject) => {
-        // check: known servers' current load
-        // opts might contain other flags or user/conn info, for maybe blacklist
-        return resolve(impl.fm);
-      });
+      return repo.get_registered_fms().then(
+        (result) => {
+          if (result) {
+            return { id: result[0].fm_id, ip: result[0].fm_ip };
+          } else {
+            let err_msg = 'no available front machine at the moment';
+            log.trace(err_msg);
+            throw new Error(err_msg);
+          }
+        },
+        (err) => {
+          let err_msg = 'error querying front machine repository';
+          log.trace(err, err_msg);
+          throw new Error(err_msg);
+        });
     }
   };
 }

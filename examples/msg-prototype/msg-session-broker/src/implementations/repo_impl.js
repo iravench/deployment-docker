@@ -42,6 +42,7 @@ const pool = mysql.createPool(config.storage.mysql);
 
 const selectNonClosedSessionQuery = 'select id, status from session where user_id=? and device_id=? and ip=? and status!="closed"';
 const insertNewSessionQuery = 'insert into session (user_id, device_id, ip, status) values (?, ?, ?, "inactive")';
+const selectFmRegistrationQuery = 'select fm_id, fm_ip from fm_registration';
 
 function mysqlPromise(handler) {
   return new Promise((resolve, reject) => {
@@ -86,6 +87,24 @@ export default {
         }
 
         resolve({ id: result.insertId, status: "inactive" });
+        connection.release();
+      });
+    });
+  },
+  get_fm_registrations: function() {
+    return mysqlPromise((connection, resolve, reject) => {
+      connection.query(selectFmRegistrationQuery, (err, result) => {
+        if (err) {
+          let err_msg = 'error querying fm registration storage';
+          log.trace(err, err_msg);
+          return reject(new StorageError(err_msg));
+        }
+
+        if (result.length >= 0)
+          resolve(result);
+        else
+          resolve(null);
+
         connection.release();
       });
     });

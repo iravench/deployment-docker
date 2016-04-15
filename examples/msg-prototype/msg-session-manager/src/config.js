@@ -2,7 +2,7 @@
 
 const secret = process.env.JWT_SECRET || "1234567890";
 const fm_id = process.env.FM_ID || "fm-1";
-const fm_ip = process.env.FM_IP || "192.168.99.100";
+const fm_ip = process.env.FM_IP || "127.0.0.1";
 
 export default {
   logger: {
