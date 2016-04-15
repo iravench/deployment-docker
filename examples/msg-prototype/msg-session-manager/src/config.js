@@ -1,5 +1,9 @@
 'use strict';
 
+const secret = process.env.JWT_SECRET || "1234567890";
+const fm_id = process.env.FM_ID || "fm-1";
+const fm_ip = process.env.FM_IP || "192.168.99.100";
+
 export default {
   logger: {
     name: "msg-session-manager",
@@ -7,7 +11,7 @@ export default {
   },
   jwt: {
     algorithm: 'HS256',      // signature and hash algorithm
-    secret: "1234567890",    // secret for signature signing and verification. can be replaced with certificate.
+    secret: secret,    // secret for signature signing and verification. can be replaced with certificate.
     audience: "ibc",         // target the token is issued for
     subject: "fm auth",      // subject the token is issued for
     issuer: "bex msg",       // issuer of the token
@@ -29,6 +33,10 @@ export default {
       user: "pink",
       password: "5678"
     }
+  },
+  fm: {
+    id: fm_id,
+    ip: fm_ip
   },
   port: 9090
 };

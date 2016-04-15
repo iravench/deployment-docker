@@ -38,6 +38,39 @@ export default function(config) {
       return impl.close_session(socket_id).catch((err) => {
         handleStorageError(err);
       });
+    },
+    close_all_fm_sessions: function(fm_id) {
+      return impl.close_fm_sessions(fm_id).catch((err) => {
+        handleStorageError(err);
+      });
+    },
+    get_fm_record: function(fm_id) {
+      return impl.get_fm_registration(fm_id).then(
+        (result) => {
+          if (!result || !result.id) {
+            return;
+          } else {
+            return { fm_id: result.id };
+          }
+        },
+        (err) => {
+          handleStorageError(err);
+        });
+    },
+    set_fm_record: function(fm_id, fm_ip) {
+      return impl.set_fm_registration(fm_id, fm_ip).then(
+        () => {
+          return;
+        },
+        (err) => {
+          handleStorageError(err);
+        });
+    },
+    delete_fm_record: function(fm_id) {
+      return impl.delete_fm_registration(fm_id).catch(
+        (err) => {
+          handleStorageError(err);
+        });
     }
   };
 }

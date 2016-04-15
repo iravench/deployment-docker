@@ -5,6 +5,12 @@ import { SessionAlreadyActivatedError } from './utils/errors'
 
 const log = logger.child({widget_type: 'fm_seletor_factory'});
 
+function handleRepositoryError() {
+  let err_msg = 'error accessing session repository';
+  log.trace(err, err_msg);
+  throw new Error(err_msg);
+}
+
 export default function(config) {
   const { repo } = config;
 
@@ -22,9 +28,7 @@ export default function(config) {
           return decodedToken.session_id;
         },
         (err) => {
-          let err_msg = 'error accessing session';
-          log.trace(err, err_msg);
-          throw new Error(err_msg);
+          handleRepositoryError();
         });
     },
     deactivate: function(socket_id) {
@@ -32,8 +36,15 @@ export default function(config) {
         log.trace('session closed by socket id');
       },
       (err) => {
-        let err_msg = 'error deactivating socket session';
-        log.trace(err, err_msg);
+        handleRepositoryError();
+      });
+    },
+    close_all: function(fm_id) {
+      return repo.close_all_fm_sessions(fm_id).then(() => {
+        log.trace('sessions closed by fm id');
+      },
+      (err) => {
+        handleRepositoryError();
       });
     }
   };

@@ -41,55 +41,52 @@ const pool = mysql.createPool(config.storage.mysql);
 // so MYSQL is a better option here, not redis
 
 const selectNonClosedSessionQuery = 'select id, status from session where user_id=? and device_id=? and ip=? and status!="closed"';
-
 const insertNewSessionQuery = 'insert into session (user_id, device_id, ip, status) values (?, ?, ?, "inactive")';
+
+function mysqlPromise(handler) {
+  return new Promise((resolve, reject) => {
+    pool.getConnection((err, connection) => {
+      if (err) {
+        let err_msg = 'error connecting mysql';
+        log.trace(err, err_msg);
+        return reject(new StorageError(err_msg));
+      }
+
+      handler(connection, resolve, reject);
+    });
+  });
+}
 
 export default {
   get_none_closed_session(user, conn) {
-    return new Promise((resolve, reject) => {
-      pool.getConnection((err, connection) => {
+    return mysqlPromise((connection, resolve, reject) => {
+      connection.query(selectNonClosedSessionQuery, [user.user_id, user.device_id, conn.ip], (err, rows) => {
         if (err) {
-          let err_msg = 'error accessing storage';
+          let err_msg = 'error querying session storage';
           log.trace(err, err_msg);
           return reject(new StorageError(err_msg));
         }
 
-        connection.query(selectNonClosedSessionQuery, [user.user_id, user.device_id, conn.ip], (err, rows) => {
-          if (err) {
-            let err_msg = 'error querying session storage';
-            log.trace(err, err_msg);
-            return reject(new StorageError(err_msg));
-          }
+        if (rows.length >= 0)
+          resolve(rows[0]);
+        else
+          resolve(null);
 
-          if (rows.length >= 0)
-            resolve(rows[0]);
-          else
-            resolve(null);
-
-          connection.release();
-        });
+        connection.release();
       });
     });
   },
   create_new_session: function(user, conn) {
-    return new Promise((resolve, reject) => {
-      pool.getConnection((err, connection) => {
+    return mysqlPromise((connection, resolve, reject) => {
+      connection.query(insertNewSessionQuery, [user.user_id, user.device_id, conn.ip], (err, result) => {
         if (err) {
-          let err_msg = 'error accessing storage';
+          let err_msg = 'error inserting new session to storage';
           log.trace(err, err_msg);
           return reject(new StorageError(err_msg));
         }
 
-        connection.query(insertNewSessionQuery, [user.user_id, user.device_id, conn.ip], (err, result) => {
-          if (err) {
-            let err_msg = 'error inserting new session to storage';
-            log.trace(err, err_msg);
-            return reject(new StorageError(err_msg));
-          }
-
-          resolve({ id: result.insertId, status: "inactive" });
-          connection.release();
-        });
+        resolve({ id: result.insertId, status: "inactive" });
+        connection.release();
       });
     });
   }

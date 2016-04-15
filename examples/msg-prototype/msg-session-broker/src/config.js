@@ -1,5 +1,7 @@
 'use strict';
 
+const secret = process.env.JWT_SECRET || "1234567890";
+
 export default {
   logger: {
     name: "msg-session-broker",
@@ -7,7 +9,7 @@ export default {
   },
   jwt: {
     algorithm: 'HS256',      // signature and hash algorithm
-    secret: "1234567890",    // secret for signature signing and verification. can be replaced with certificate.
+    secret: secret,    // secret for signature signing and verification. can be replaced with certificate.
     expiresIn: 300,          // expiration of the token. 300 in seconds, or 2 days, 10h, 7d
     audience: "ibc",         // target the token is issued for
     subject: "fm auth",      // subject the token is issued for

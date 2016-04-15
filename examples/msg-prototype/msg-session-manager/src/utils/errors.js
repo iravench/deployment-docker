@@ -29,3 +29,11 @@ export function SessionAlreadyActivatedError(message) {
 }
 SessionAlreadyActivatedError.prototype = Object.create(Error.prototype);
 SessionAlreadyActivatedError.prototype.constructor = SessionAlreadyActivatedError;
+
+export function FrontMachineIdInUseError(message) {
+  this.name = 'FrontMachineIdInUseError';
+  this.message = message || 'front machine id is in use';
+  this.stack = (new Error()).stack;
+}
+FrontMachineIdInUseError.prototype = Object.create(Error.prototype);
+FrontMachineIdInUseError.prototype.constructor = FrontMachineIdInUseError;
