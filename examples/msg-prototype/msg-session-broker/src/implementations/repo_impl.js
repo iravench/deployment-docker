@@ -42,7 +42,7 @@ const pool = mysql.createPool(config.storage.mysql);
 
 const selectNonClosedSessionQuery = 'select id, status from session where user_id=? and device_id=? and ip=? and status!="closed"';
 const insertNewSessionQuery = 'insert into session (user_id, device_id, ip, status) values (?, ?, ?, "inactive")';
-const selectFmRegistrationQuery = 'select fm_id, fm_ip from fm_registration';
+const selectFmRegistrationQuery = 'select A.fm_id, A.fm_ip, IFNULL(B.live_session_count, 0) loads from fm_registration A left outer join (select fm_id, count(1) as live_session_count from session where status="active" group by fm_id) B on A.fm_id=B.fm_id;';
 
 function mysqlPromise(handler) {
   return new Promise((resolve, reject) => {

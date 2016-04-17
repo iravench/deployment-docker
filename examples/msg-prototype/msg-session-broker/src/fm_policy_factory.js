@@ -2,6 +2,7 @@
 
 import config from './config';
 import logger from './utils/logger'
+import _ from 'lodash';
 
 const log = logger.child({widget_type: 'fm_policy_factory'});
 
@@ -18,13 +19,23 @@ export default function(options) {
   return {
     // get available front machines
     // check known servers' current load
-    // opts might contain other flags or user/conn info, for maybe blacklist
+    // opts might contain other flags for user/conn, for example certain user might be blacklist
     //
     get_fm: function(user, conn) {
       return repo.get_registered_fms().then(
         (result) => {
           if (result) {
-            return { id: result[0].fm_id, ip: result[0].fm_ip };
+            //use the least loaded fm for new session
+            //TBD notice this is a very naive impl
+            //there is a gap between token issued and ws connection, so the loads reflected has a delay.
+            //might want to distribute loads to more than 1 candidates
+            //might want to take it easy when loads reach certain point
+            //might want to prioritize on newly joint fm, etc.
+            let sorted_fms = result;
+            if (result.length >= 1) {
+              sorted_fms = _.sortBy(result, ['loads'], ['asc']);
+            }
+            return { id: sorted_fms[0].fm_id, ip: sorted_fms[0].fm_ip };
           } else {
             let err_msg = 'no available front machine at the moment';
             log.trace(err_msg);
