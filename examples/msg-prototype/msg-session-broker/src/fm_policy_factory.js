@@ -39,8 +39,10 @@ export default function(options) {
             let sorted_fms = result;
             if (result.length > 1) {
               sorted_fms = _.sortBy(result, ['loads'], ['asc']);
+              log.trace('the least loaded fm is ' + sorted_fms[0].fm_id);
             }
-            return { id: sorted_fms[0].fm_id, ip: sorted_fms[0].fm_ip };
+            let fm = sorted_fms[0];
+            return { id: fm.fm_id, ip: fm.fm_ip, port: fm.fm_port };
           } else {
             handleError('no available front machine at the moment');
           }

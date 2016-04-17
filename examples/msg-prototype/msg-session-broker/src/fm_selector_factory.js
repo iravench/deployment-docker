@@ -15,7 +15,7 @@ export default function(config) {
 
         return token.generate(payload).then(
           (token) => {
-            return { fm_ip: fm.ip, token: token };
+            return { fm_ip: fm.ip, fm_port: fm.port, token: token };
           });
       },
       (err) => {

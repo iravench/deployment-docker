@@ -14,7 +14,7 @@ const activateSessionQuery = 'update session set status="active", fm_id=?, socke
 const closeSessionQuery = 'update session set status="closed" where socket_id=?';
 const closeFmSessionsQuery = 'update session set status="closed" where fm_id=? and status!="closed"';
 const selectFmRegistrationQuery = 'select fm_id as id from fm_registration where fm_id=?';
-const insertNewFmRegistrationQuery = 'insert into fm_registration (fm_id, fm_ip) values (?, ?)';
+const insertNewFmRegistrationQuery = 'insert into fm_registration (fm_id, fm_ip, fm_port) values (?, ?, ?)';
 const deleteFmRegistrationQuery = 'delete from fm_registration where fm_id=?';
 
 function mysqlPromise(handler) {
@@ -110,9 +110,9 @@ export default {
       });
     });
   },
-  set_fm_registration: function(fm_id, fm_ip) {
+  set_fm_registration: function(fm_id, fm_ip, fm_port) {
     return mysqlPromise((connection, resolve, reject) => {
-      connection.query(insertNewFmRegistrationQuery, [fm_id, fm_ip], (err, result) => {
+      connection.query(insertNewFmRegistrationQuery, [fm_id, fm_ip, fm_port], (err, result) => {
         if (err) {
           let err_msg = 'error inserting new fm registration to storage';
           log.trace(err, err_msg);

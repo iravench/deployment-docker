@@ -4,22 +4,22 @@
   // grab token and front machine ip from msg-session-broker
   $.ajax({
     type: "POST",
-    url: "http://localhost:8080/v1/tickets", // points to msg-session-broker
+    url: "http://" + window.location.host + "/v1/tickets", // points to msg-session-broker
     data: {
       user: { user_id: "pink", device_id: "iphone-xxxxx-xxxx-xxxx" }
     },
     dataType: "json",
     success: function(data) {
       var fm_ip = data.fm_ip;
+      var fm_port = data.fm_port;
       var token = data.token;
 
-      setupSocketIo(fm_ip, token);
+      setupSocketIo(fm_ip, fm_port, token);
     }
   });
 
-  function setupSocketIo(fm_ip, token) {
-    // the port should also be coming in from token
-    var socket = io.connect('http://' + fm_ip + ':9090');
+  function setupSocketIo(fm_ip, fm_port, token) {
+    var socket = io.connect('http://' + fm_ip + ':' + fm_port);
     socket
     .on('connect', function () {
       socket

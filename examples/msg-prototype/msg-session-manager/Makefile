@@ -8,6 +8,9 @@ ifdef REGISTRY
     IMAGE=$(PROJECT):$(TAG)
   endif
 
+REGISTRY_ADDR = $(shell docker-machine ip infra):5000
+PRIVATE_IMAGE = $(REGISTRY_ADDR)/$(shell basename $(IMAGE))
+
 all:
 	@echo "available targets:"
 	@echo "  * clean     - remove images of name $(PROJECT)"
@@ -18,14 +21,13 @@ all:
 clean:
 	docker images | grep "$(PROJECT)" | grep "$(TAG)" | awk '{print $$3}' | (read id; if [ "$$id" != "" ]; then docker rmi $$id; exit 0; fi)
 build: Dockerfile clean
+	npm run compile
 	docker build -t $(IMAGE) .
 run:
 	docker run -d -i -t -p 9090:9090 --name $(SHORT_NAME) $(PROJECT) nodemon
 remove:
 	docker rm -f $(SHORT_NAME)
 registry: build
-	REGISTRY_ADDR = $(shell docker-machine ip infra):5000
-	PRIVATE_IMAGE = $(REGISTRY_ADDR)/$(shell basename $(IMAGE))
 	docker tag -f $(IMAGE) $(PRIVATE_IMAGE)
 	docker push $(PRIVATE_IMAGE)
 	docker rmi -f $(IMAGE)

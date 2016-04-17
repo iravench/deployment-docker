@@ -57,8 +57,8 @@ export default function(config) {
           handleStorageError(err);
         });
     },
-    set_fm_record: function(fm_id, fm_ip) {
-      return impl.set_fm_registration(fm_id, fm_ip).then(
+    set_fm_record: function(fm_id, fm_ip, fm_port) {
+      return impl.set_fm_registration(fm_id, fm_ip, fm_port).then(
         () => {
           return;
         },

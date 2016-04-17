@@ -7,3 +7,5 @@ RUN cd /app && npm install -g nodemon bunyan && npm install --production=true
 COPY . /app
 
 WORKDIR /app
+
+CMD ["nodemon"]

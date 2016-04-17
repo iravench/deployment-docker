@@ -15,14 +15,14 @@ export default function(config) {
   const { repo } = config;
 
   return {
-    register: function(fm_id, fm_ip) {
+    register: function(fm_id, fm_ip, fm_port) {
       return repo.get_fm_record(fm_id).then(
         (result) => {
           if (result && result.fm_id) {
             log.trace('fm_id already in use');
             throw new FrontMachineIdInUseError();
           } else {
-            return repo.set_fm_record(fm_id, fm_ip).then(
+            return repo.set_fm_record(fm_id, fm_ip, fm_port).then(
               () => {
                 log.trace('fm_id registered');
               },

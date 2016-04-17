@@ -71,7 +71,7 @@ server.listen(config.port);
 log.info('start listening on port %s', config.port);
 
 //register to available fm pool
-fm_register.register(config.fm.id, config.fm.ip).then(
+fm_register.register(config.fm.id, config.fm.ip, config.fm.port).then(
   () => {
     log.info('front machine registered');
   },
@@ -81,7 +81,12 @@ fm_register.register(config.fm.id, config.fm.ip).then(
     process.exit(1);
   });
 
+//trap interrupt signal and perform cleanup
 process.on("SIGINT", () => {
+  cleanup();
+});
+
+function cleanup() {
   Promise.all([
     fm_register.deregister(config.fm.id),
     fm_session.close_all(config.fm.id)
@@ -95,4 +100,4 @@ process.on("SIGINT", () => {
       log.error('error cleaning up');
       process.exit(1);
     });
-});
+}

@@ -1,6 +1,8 @@
 REDIS_NAME        ?= msg-storage-redis
 MYSQL_NAME        ?= msg-storage-mysql
 
+INIT_SQL=$(shell cat init.sql)
+
 all:
 	@echo "available targets:"
 	@echo "  * run        - run both redis and mysql servers as docker containers"
@@ -25,9 +27,19 @@ mysql_logs:
 	docker logs $(MYSQL_NAME)
 mysql_shell:
 	docker exec -it $(MYSQL_NAME) sh
+mysql_init:
+	docker run -it --link $(MYSQL_NAME):mysql --rm mysql sh -c \
+	  'exec mysql \
+	  -h"$$MYSQL_PORT_3306_TCP_ADDR" \
+	  -P"$$MYSQL_PORT_3306_TCP_PORT" \
+	  -D"$$MYSQL_ENV_MYSQL_DATABASE" \
+	  -u"$$MYSQL_ENV_MYSQL_USER" \
+	  -p"$$MYSQL_ENV_MYSQL_PASSWORD" \
+	  -e"$(INIT_SQL)"'
 mysql_cli:
 	docker run -it --link $(MYSQL_NAME):mysql --rm mysql sh -c \
-	  'exec mysql -h"$$MYSQL_PORT_3306_TCP_ADDR" \
+	  'exec mysql \
+	  -h"$$MYSQL_PORT_3306_TCP_ADDR" \
 	  -P"$$MYSQL_PORT_3306_TCP_PORT" \
 	  -D"$$MYSQL_ENV_MYSQL_DATABASE" \
 	  -u"$$MYSQL_ENV_MYSQL_USER" \

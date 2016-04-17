@@ -1,13 +1,17 @@
 'use strict';
 
+const log_level = process.env.LOG_LEVEL || "info";
 const secret = process.env.JWT_SECRET || "1234567890";
 const fm_id = process.env.FM_ID || "fm-1";
 const fm_ip = process.env.FM_IP || "127.0.0.1";
+const fm_port = process.env.FM_PORT || 9090;
+const redis_ip = process.env.REDIS_IP || "192.168.99.100";
+const mysql_ip = process.env.MYSQL_IP || "192.168.99.100";
 
 export default {
   logger: {
     name: "msg-session-manager",
-    level: "info"
+    level: log_level
   },
   jwt: {
     algorithm: 'HS256',      // signature and hash algorithm
@@ -20,14 +24,14 @@ export default {
   },
   storage: {
     redis: {
-      ip: "192.168.99.100",
+      ip: redis_ip,
       port: 6379,
       family: 4,
       password: "pink5678",
       db: 0
     },
     mysql: {
-      host: "192.168.99.100",
+      host: mysql_ip,
       port: 3306,
       database: "bex-msg",
       user: "pink",
@@ -36,7 +40,8 @@ export default {
   },
   fm: {
     id: fm_id,
-    ip: fm_ip
+    ip: fm_ip,
+    port: fm_port
   },
   port: 9090
 };
