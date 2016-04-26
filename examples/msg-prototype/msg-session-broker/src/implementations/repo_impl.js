@@ -72,7 +72,7 @@ export default {
       connection.query(selectNonClosedSessionQuery, [user.user_id, user.device_id, conn.ip], (err, rows) => {
         if (err) return handleMySQLError(reject, err, err_msg);
 
-        if (rows.length >= 0) {
+        if (rows.length > 0) {
           log.debug('non-closed session data of id %s retrieved', rows[0].id);
           resolve(rows[0]);
         }
