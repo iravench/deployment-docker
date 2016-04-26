@@ -1,7 +1,7 @@
 'use strict';
 
 import config from './config'
-import log from './utils/logger'
+import logger from './utils/logger'
 import express from 'express'
 import controllers from './controllers'
 import bodyParser from 'body-parser'
@@ -17,6 +17,7 @@ const repo = repo_factory({ impl: repo_impl });
 const fm_policy = fm_policy_factory({ repo: repo });
 const fm_token = fm_token_factory({ impl: fm_token_impl });
 const fm_selector = fm_selector_factory({ repo: repo, policy: fm_policy, token: fm_token });
+const log = logger.child({module: 'index'});
 
 const app = express();
 app.locals.fm_selector = fm_selector;

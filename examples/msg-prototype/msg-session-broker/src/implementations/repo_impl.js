@@ -5,8 +5,8 @@ import config from '../config'
 import logger from '../utils/logger'
 import { StorageError } from '../utils/errors'
 
-const log = logger.child({widget_type: 'repo_impl'});
-//TBD should probably inject a pool instance here so that we can do unit testing...
+const log = logger.child({module: 'repo_impl'});
+//TBD should probably inject a pool instance so that we can do unit testing...
 const pool = mysql.createPool(config.storage.mysql);
 
 // how can we store this data in redis?
@@ -44,15 +44,20 @@ const selectNonClosedSessionQuery = 'select id, status from session where user_i
 const insertNewSessionQuery = 'insert into session (user_id, device_id, ip, status) values (?, ?, ?, "inactive")';
 const selectFmRegistrationQuery = 'select A.fm_id, A.fm_ip, A.fm_port, IFNULL(B.live_session_count, 0) loads from fm_registration A left outer join (select fm_id, count(1) as live_session_count from session where status="active" group by fm_id) B on A.fm_id=B.fm_id;';
 
-function mysqlPromise(handler) {
-  return new Promise((resolve, reject) => {
-    pool.getConnection((err, connection) => {
-      if (err) {
-        let err_msg = 'error connecting mysql';
-        log.trace(err, err_msg);
-        return reject(new StorageError(err_msg));
-      }
+function handleMySQLError(reject, err, err_msg) {
+  log.error(err);
+  return reject(new StorageError(err_msg));
+}
 
+function mysqlPromise(handler) {
+  let err_msg = 'error connecting to storage';
+
+  return new Promise((resolve, reject) => {
+    log.debug('getting pooled mysql connection');
+    pool.getConnection((err, connection) => {
+      if (err) return handleMySQLError(reject, err, err_msg);
+
+      log.debug('mysql connection established');
       handler(connection, resolve, reject);
     });
   });
@@ -60,50 +65,57 @@ function mysqlPromise(handler) {
 
 export default {
   get_none_closed_session(user, conn) {
-    return mysqlPromise((connection, resolve, reject) => {
-      connection.query(selectNonClosedSessionQuery, [user.user_id, user.device_id, conn.ip], (err, rows) => {
-        if (err) {
-          let err_msg = 'error querying session storage';
-          log.trace(err, err_msg);
-          return reject(new StorageError(err_msg));
-        }
+    let err_msg = 'error querying storage for non-closed session data';
 
-        if (rows.length >= 0)
+    return mysqlPromise((connection, resolve, reject) => {
+      log.debug('querying non-closed session data');
+      connection.query(selectNonClosedSessionQuery, [user.user_id, user.device_id, conn.ip], (err, rows) => {
+        if (err) return handleMySQLError(reject, err, err_msg);
+
+        if (rows.length >= 0) {
+          log.debug('non-closed session data of id %s retrieved', rows[0].id);
           resolve(rows[0]);
-        else
+        }
+        else {
+          log.debug('non-closed session data not found');
           resolve(null);
+        }
 
         connection.release();
       });
     });
   },
   create_new_session: function(user, conn) {
-    return mysqlPromise((connection, resolve, reject) => {
-      connection.query(insertNewSessionQuery, [user.user_id, user.device_id, conn.ip], (err, result) => {
-        if (err) {
-          let err_msg = 'error inserting new session to storage';
-          log.trace(err, err_msg);
-          return reject(new StorageError(err_msg));
-        }
+    let err_msg = 'error updating storage for setting new session data';
 
+    return mysqlPromise((connection, resolve, reject) => {
+      log.debug('setting new session data');
+      connection.query(insertNewSessionQuery, [user.user_id, user.device_id, conn.ip], (err, result) => {
+        if (err) return handleMySQLError(reject, err, err_msg);
+
+        log.debug('new session data of id %s set', result.insertId);
         resolve({ id: result.insertId, status: "inactive" });
+
         connection.release();
       });
     });
   },
   get_fm_registrations: function() {
-    return mysqlPromise((connection, resolve, reject) => {
-      connection.query(selectFmRegistrationQuery, (err, result) => {
-        if (err) {
-          let err_msg = 'error querying fm registration storage';
-          log.trace(err, err_msg);
-          return reject(new StorageError(err_msg));
-        }
+    let err_msg = 'error querying storage for front machine registration data';
 
-        if (result.length >= 0)
+    return mysqlPromise((connection, resolve, reject) => {
+      log.debug('querying front machine registration data');
+      connection.query(selectFmRegistrationQuery, (err, result) => {
+        if (err) return handleMySQLError(reject, err, err_msg);
+
+        if (result.length >= 0) {
+          log.debug('front machine registration data retrieved');
           resolve(result);
-        else
+        }
+        else {
+          log.debug('front machine registration data not found');
           resolve(null);
+        }
 
         connection.release();
       });

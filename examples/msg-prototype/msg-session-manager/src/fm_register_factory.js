@@ -3,45 +3,50 @@
 import logger from './utils/logger'
 import { FrontMachineIdInUseError } from './utils/errors'
 
-const log = logger.child({widget_type: 'fm_register_factory'});
+const log = logger.child({module: 'fm_register_factory'});
 
-function handleRepositoryError(err) {
-  let err_msg = 'error accessing fm registration repository';
-  log.trace(err, err_msg);
-  throw new Error(err_msg);
-}
+export default function(opts) {
+  const { repo } = opts;
 
-export default function(config) {
-  const { repo } = config;
+  function handleRepositoryError(err, err_msg) {
+    log.error(err);
+    throw new Error(err_msg);
+  }
 
   return {
     register: function(fm_id, fm_ip, fm_port) {
+      // TBD add validations
+      let err_msg = 'error registering front machine record';
+
+      log.debug('checking front machine registration record');
       return repo.get_fm_record(fm_id).then(
         (result) => {
           if (result && result.fm_id) {
-            log.trace('fm_id already in use');
+            log.debug('front machine registration record found');
             throw new FrontMachineIdInUseError();
           } else {
+            log.debug('setting front machine registration record');
             return repo.set_fm_record(fm_id, fm_ip, fm_port).then(
               () => {
-                log.trace('fm_id registered');
+                log.debug('front machine registration record set');
               },
               (err) => {
-                handleRepositoryError(err);
+                handleRepositoryError(err, err_msg);
               });
           }
         },
         (err) => {
-          handleRepositoryError(err);
+          handleRepositoryError(err, err_msg);
         });
     },
     deregister: function(fm_id) {
+      log.debug('deleting front machine registration record');
       return repo.delete_fm_record(fm_id).then(
         () => {
-          log.trace('fm_id deregistered');
+          log.debug('front machine registration record deleted');
         },
         (err) => {
-          handleRepositoryError(err);
+          handleRepositoryError(err, 'error deregistering front machine record');
         });
     }
   };

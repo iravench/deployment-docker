@@ -3,12 +3,12 @@
 import config from './config';
 import logger from './utils/logger'
 
-const log = logger.child({widget_type: 'fm_token_factory'});
+const log = logger.child({module: 'fm_token_factory'});
 
-export default function(options) {
+export default function(opts) {
   const defaults = config.jwt;
-  const opts = Object.assign({}, defaults, options)
-  const { impl } = opts;
+  const options = Object.assign({}, defaults, opts)
+  const { impl } = options;
 
   function handleValidation(payload) {
     if (!payload) throw new Error('empty payload');
@@ -22,9 +22,10 @@ export default function(options) {
 
         handleValidation(payload);
 
-        return impl.sign(payload, opts).then(
+        log.debug('signing payload');
+        return impl.sign(payload, options).then(
           (token) => {
-            log.trace('token generated');
+            log.debug('signed token generated');
             return resolve(token);
           });
       });

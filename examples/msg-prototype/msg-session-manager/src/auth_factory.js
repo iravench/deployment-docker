@@ -1,46 +1,48 @@
 'use strict';
 
 import logger from './utils/logger'
-import { SessionAlreadyActivatedError } from './utils/errors'
+import { SessionInUseError } from './utils/errors'
 
-const log = logger.child({widget_type: 'auth_factory'});
+const log = logger.child({module: 'auth_factory'});
 
-export default function(config) {
-  const { fm_session } = config;
+export default function(opts) {
+  const { fm_session } = opts;
 
   return {
     auth: (socket, decodedToken, onSuccess, onError) => {
       //TBD might want further compare socket client info with decoded token
       //to ensure this is in fact the client sending the token he properly obtained
+      log.debug('verifying jwt content');
       if (!socket.handshake.address.includes(decodedToken.conn.ip)) {
-        let err_msg = 'client ip does not match with token';
-        log.trace(err_msg);
-        onError({ message: err_msg }, 'invalid_token');
+        let err_msg = 'client ip does not match with jwt content';
+        log.warn(err_msg);
+        return onError({ message: err_msg }, 'invalid_token');
       }
 
-      // activate session base on the decoded token
+      log.debug('activating session base on decoded jwt');
       fm_session.activate(decodedToken, socket.id).then((result) => {
-        onSuccess();
+        log.debug('session activated, jwt auth is successful');
+        return onSuccess();
       },
       (err) => {
-        if (err instanceof SessionAlreadyActivatedError) {
+        if (err instanceof SessionInUseError) {
+          log.warn(err);
           let err_msg = 'session has already been activated';
-          log.trace(err, err_msg);
           onError({ message: err_msg }, 'invalid_token');
         } else {
+          log.error(err);
           let err_msg = 'unknown error, please retry';
-          log.trace(err, err_msg);
           onError({ message: err_msg });
         }
       });
     },
     close: (socket_id) => {
+      log.debug('deactivating socket session by socket_id %s', socket_id);
       return fm_session.deactivate(socket_id).then(() => {
-        log.trace('socket session deactivated');
+        log.debug('socket session by socket_id %s deactivated', socket_id);
       },
       (err) => {
-        let err_msg = 'error deactivating socket session';
-        log.trace(err, err_msg);
+        log.error(err);
       });
     }
   };

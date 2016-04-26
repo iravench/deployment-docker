@@ -3,10 +3,15 @@
 import bunyan from 'bunyan';
 import config from '../config';
 
-let _logger;
-(function() {
-  if (_logger) return;
-  _logger = bunyan.createLogger(config.logger);
-})();
+let level = config.debug ? "debug" : "info";
 
-export default _logger;
+// mute log outputs for running tests
+if (config.env == 'test') level = "fatal";
+
+//TBD should be further customized based on running environment
+let opts = {
+  name: config.applicationName,
+  level: level
+};
+
+export default bunyan.createLogger(opts);

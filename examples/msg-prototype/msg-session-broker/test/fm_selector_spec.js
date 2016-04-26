@@ -86,7 +86,7 @@ describe('fm_selector', () => {
 
       return fm_selector
         .allocate(fixture.valid_user, fixture.valid_conn)
-        .catch(err => { expect(err.message).to.have.string('fail on obtaining front machine connection'); });
+        .catch(err => { expect(err.message).to.have.string('error generating token'); });
     });
 
     it('one session per one user/device/ip combo', () => {

@@ -4,7 +4,7 @@
   "description": "a messaging module, to manage session and backend communication",
   "main": "lib/",
   "scripts": {
-    "start": "nodemon --exec babel-node -- src/index.js | bunyan",
+    "start": "DEBUG=true nodemon --exec babel-node -- src/index.js | bunyan",
     "test": "mocha --compilers js:babel-core/register --require ./test/test_init.js --recursive ./test",
     "test:watch": "npm run test -- --watch",
     "compile": "rm -rf lib/ && babel -d lib/ src/"

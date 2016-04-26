@@ -19,8 +19,7 @@ const repo = repo_factory({ impl: repo_impl });
 const fm_session = fm_session_factory({ repo: repo });
 const io_auth = auth_factory({ fm_session: fm_session });
 const fm_register = fm_register_factory({ repo: repo });
-
-const log = logger.child({widget_type: 'main'});
+const log = logger.child({module: 'index'});
 
 // init api
 const app = express();
@@ -81,9 +80,11 @@ fm_register.register(config.fm.id, config.fm.ip, config.fm.port).then(
     process.exit(1);
   });
 
-//trap interrupt signal and perform cleanup
-process.on("SIGINT", () => {
-  cleanup();
+//trap interrupt signals and perform cleanup
+['SIGINT','SIGUSR2'].forEach((signal) => {
+  process.on(signal, () => {
+    cleanup();
+  });
 });
 
 function cleanup() {
