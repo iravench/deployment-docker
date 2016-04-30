@@ -40,7 +40,7 @@ if ! docker-machine inspect $MONITOR_NAME &> /dev/null; then
     --hostname=$MONITOR_NAME-registrator \
     --restart=always \
     --volume=/var/run/docker.sock:/tmp/docker.sock \
-    $REGISTRY_ADDR/registrator -ip $MONITOR_ADDR consul://$CONSUL_ADDR -cleanup
+    $REGISTRY_ADDR/registrator -ip $MONITOR_ADDR -cleanup consul://$CONSUL_ADDR
 
   printf "\e[32mInitiating prometheus...\e[0m\n"
   PERF_MONITOR_NAME="cadvisor"

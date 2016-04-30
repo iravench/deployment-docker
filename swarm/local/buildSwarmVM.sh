@@ -89,7 +89,7 @@ docker $(docker-machine config $SWARM_NODE_NAME) run -d \
   --hostname=$SWARM_NODE_NAME-registrator \
   --restart=always \
   --volume=/var/run/docker.sock:/tmp/docker.sock \
-  $REGISTRY_ADDR/registrator -ip $SWARM_NODE_ADDR consul://$CONSUL_ADDR -cleanup
+  $REGISTRY_ADDR/registrator -ip $SWARM_NODE_ADDR -cleanup consul://$CONSUL_ADDR
 
 printf "\e[32mStarting cadvisor...\e[0m\n"
 docker $(docker-machine config $SWARM_NODE_NAME) run -d \

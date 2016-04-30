@@ -36,7 +36,7 @@ if ! docker-machine inspect infra &> /dev/null; then
     --hostname=infra-registrator \
     --restart=always \
     --volume=/var/run/docker.sock:/tmp/docker.sock \
-    gliderlabs/registrator -ip $INFRA_ADDR consul://$CONSUL_ADDR -cleanup
+    gliderlabs/registrator -ip $INFRA_ADDR -cleanup consul://$CONSUL_ADDR
 
   printf "\e[32mStart initiating registry...\e[0m\n"
   docker $(docker-machine config infra) run -d \
@@ -57,7 +57,7 @@ eval $(docker-machine env infra)
 REGISTRY_ADDR=$(docker-machine ip infra):5000
 PRESET_IMAGES="gliderlabs/consul-server, gliderlabs/consul-agent, gliderlabs/logspout, gliderlabs/registrator, swarm:latest"
 PRESET_IMAGES="$PRESET_IMAGES, sirile/minilogbox, sirile/kibanabox, prom/prometheus, google/cadvisor"
-PRESET_IMAGES="$PRESET_IMAGES, mhart/alpine-node:latest, nginx"
+PRESET_IMAGES="$PRESET_IMAGES, mhart/alpine-node:latest, nginx, mysql:latest"
 
 process_images() {
   local public_image_name=$1
