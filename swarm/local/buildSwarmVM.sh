@@ -28,6 +28,7 @@ if [ $1 == "master" ]; then
     printf "\e[32mCreating swarm master named \e[33m'$SWARM_NODE_NAME' \e[32mlocally...\e[0m\n"
     docker-machine create \
       --driver virtualbox \
+      --virtualbox-memory 2048 \
       --swarm --swarm-master \
       --swarm-discovery consul://$CONSUL_SERVER_ADDR \
       --swarm-image $REGISTRY_ADDR/swarm \
